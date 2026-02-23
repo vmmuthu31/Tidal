@@ -70,7 +70,13 @@ export function AddContactForm() {
       });
 
       console.log("Add contact successful", { walletAddress, twitter });
-      router.push("/dashboard/contacts"); // Use correct layout path to prevent weird nav
+      // Clear out the form to prevent double submits 
+      setWalletAddress("");
+      setTwitter("");
+      setOrgId("");
+      setUniqueTag("CONTACT_001");
+
+      router.push("/dashboard");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to create contact");
     } finally {
