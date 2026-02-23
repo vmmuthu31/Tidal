@@ -131,6 +131,7 @@ export const CONTRACT_FUNCTIONS = {
     UPDATE_MEMBER_ROLE: `${getCurrentPackageId()}::crm_access_control::update_member_role`,
     REMOVE_ORG_MEMBER: `${getCurrentPackageId()}::crm_access_control::remove_org_member`,
     REGISTER_PROFILE: `${getCurrentPackageId()}::crm_access_control::register_profile`,
+    CREATE_AND_REGISTER_PROFILE: `${getCurrentPackageId()}::crm_access_control::create_and_register_profile`,
     CREATE_ENCRYPTED_RESOURCE: `${getCurrentPackageId()}::crm_access_control::create_encrypted_resource`,
     SEAL_APPROVE: `${getCurrentPackageId()}::crm_access_control::seal_approve`,
   },
