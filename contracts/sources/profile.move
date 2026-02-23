@@ -59,16 +59,16 @@ module sui_crm::profile {
     // Public Functions - Profile Management
     // ============================================================================
     
-    /// Create a new contact profile with initial CRM data
+    /// Create a new contact profile with initial CRM data and return it
     /// The CRM data should already be encrypted and uploaded to Walrus
-    public entry fun create_profile(
+    public fun create_profile(
         org_id: object::ID,
         wallet_address: address,
         unique_tag: String,
         blob_id: vector<u8>,
         encryption_id: vector<u8>,
         ctx: &mut tx_context::TxContext
-    ) {
+    ): Profile {
         // Verify blob_id is not empty
         assert!(!vector::is_empty(&blob_id), EInvalidBlobId);
 
@@ -99,7 +99,20 @@ module sui_crm::profile {
             created_at,
         });
 
-        // Transfer to creator (org member)
+        profile
+    }
+
+    /// Standalone wrapper to create and transfer profile
+    public entry fun create_and_transfer_profile(
+        org_id: object::ID,
+        wallet_address: address,
+        unique_tag: String,
+        blob_id: vector<u8>,
+        encryption_id: vector<u8>,
+        ctx: &mut tx_context::TxContext
+    ) {
+        let created_by = tx_context::sender(ctx);
+        let profile = create_profile(org_id, wallet_address, unique_tag, blob_id, encryption_id, ctx);
         transfer::transfer(profile, created_by);
     }
 

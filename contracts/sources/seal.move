@@ -205,6 +205,29 @@ public entry fun remove_org_member(
     });
 }
 
+/// Create and register a profile in one cohesive step
+public entry fun create_and_register_profile(
+    registry: &mut ProfileAccessRegistry,
+    org_id: ID,
+    wallet_address: address,
+    unique_tag: std::string::String,
+    blob_id: vector<u8>,
+    encryption_id: vector<u8>,
+    ctx: &mut TxContext
+) {
+    // Create the Profile object via the composable function
+    let profile = sui_crm::profile::create_profile(org_id, wallet_address, unique_tag, blob_id, encryption_id, ctx);
+    let profile_id = sui_crm::profile::get_profile_id(&profile);
+    
+    let creator = tx_context::sender(ctx);
+
+    // Register it natively inside the CRM mapping
+    register_profile(registry, profile_id, wallet_address, org_id, ctx);
+    
+    // Transfer the object to the creator (org admin/member)
+    transfer::public_transfer(profile, creator);
+}
+
 /// Register a profile with owner and org
 public entry fun register_profile(
     registry: &mut ProfileAccessRegistry,
