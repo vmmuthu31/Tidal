@@ -64,6 +64,24 @@ export async function handleMessageReactionAdd(
 export async function handleMessageCreate(message: Message): Promise<void> {
   if (message.author.bot) return;
 
+  if (message.content.startsWith("!link")) {
+    const userId = message.author.id;
+    const username = message.author.username;
+    const webUrl =
+      process.env.WEBHOOK_URL?.replace("/api/webhooks/discord", "/link") ||
+      "http://localhost:3000/link";
+
+    await message.reply(
+      `🔗 To link your wallet:\n\n` +
+        `1. Visit: ${webUrl}\n` +
+        `2. Use this code: ${userId}\n` +
+        `3. Connect your wallet\n\n` +
+        `Your Discord ID: ${userId}\n` +
+        `Username: ${username}`,
+    );
+    return;
+  }
+
   const campaignId = extractCampaignId(message.content);
 
   if (!campaignId && !message.content.includes("!campaign")) {
