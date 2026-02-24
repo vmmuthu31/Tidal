@@ -5,14 +5,14 @@ module sui_crm::interaction_log {
     use sui::transfer;
     use sui::event;
 
-    struct InteractionLog has key, store {
+    public struct InteractionLog has key, store {
         id: UID,
         profile_id: ID,
         action: String,
         timestamp: u64,
     }
 
-    struct InteractionEvent has copy, drop {
+    public struct InteractionEvent has copy, drop {
         profile_id: ID,
         action: String,
         timestamp: u64,

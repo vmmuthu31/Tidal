@@ -90,7 +90,7 @@ fun init(ctx: &mut TxContext) {
     transfer::share_object(profile_registry);
 }
 
-/// Create organization access registry
+/// Create organization access registry and return it
 public fun create_org_registry(
     org_id: ID,
     admin: address,
@@ -112,6 +112,22 @@ public fun create_org_registry(
     });
     
     registry
+}
+
+/// Creates an organization and its associated access registry simultaneously
+public entry fun create_org_and_registry(
+    name: std::string::String,
+    ctx: &mut TxContext
+) {
+    let admin = tx_context::sender(ctx);
+    let org = sui_crm::org::create_org(name, ctx);
+    let org_id = sui_crm::org::get_org_id(&org);
+    
+    let registry = create_org_registry(org_id, admin, ctx);
+    
+    // Transfer org to creator, share the access registry globally so adding members is easy
+    transfer::public_transfer(org, admin);
+    transfer::share_object(registry);
 }
 
 /// Add member to organization with specific role
@@ -187,6 +203,29 @@ public entry fun remove_org_member(
         org_id: registry.org_id,
         member,
     });
+}
+
+/// Create and register a profile in one cohesive step
+public entry fun create_and_register_profile(
+    registry: &mut ProfileAccessRegistry,
+    org_id: ID,
+    wallet_address: address,
+    unique_tag: std::string::String,
+    blob_id: vector<u8>,
+    encryption_id: vector<u8>,
+    ctx: &mut TxContext
+) {
+    // Create the Profile object via the composable function
+    let profile = sui_crm::profile::create_profile(org_id, wallet_address, unique_tag, blob_id, encryption_id, ctx);
+    let profile_id = sui_crm::profile::get_profile_id(&profile);
+    
+    let creator = tx_context::sender(ctx);
+
+    // Register it natively inside the CRM mapping
+    register_profile(registry, profile_id, wallet_address, org_id, ctx);
+    
+    // Transfer the object to the creator (org admin/member)
+    transfer::public_transfer(profile, creator);
 }
 
 /// Register a profile with owner and org

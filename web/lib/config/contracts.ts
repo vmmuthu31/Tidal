@@ -8,10 +8,10 @@
 export const CONTRACT_PACKAGES = {
   // Development network (not deployed yet)
   DEVNET: '0xTODO',
-  
+
   // Testnet deployment - Update after deployment
-  TESTNET: '0xTODO_DEPLOY_CRM_PACKAGE',
-  
+  TESTNET: '0x4812b5ca085fd9b6b15c68bcf1fecbd7963bb5772b0fad30fe5db8cb1fd9f928',
+
   // Mainnet deployment (not deployed yet)
   MAINNET: '0xTODO',
 } as const;
@@ -22,12 +22,12 @@ export const CONTRACT_PACKAGES = {
 
 export const SHARED_OBJECTS = {
   // Profile Access Registry - Tracks profile ownership and org associations
-  PROFILE_REGISTRY: '0xTODO_AFTER_DEPLOYMENT',
-  
+  PROFILE_REGISTRY: '0x97ec5d19b9cdce34ff271ed23bf096959238169193b220cba93a45e563cf77f3',
+
   // Organization Access Registry - Example org registry (each org has its own)
   // Note: Each organization will have its own registry created dynamically
   EXAMPLE_ORG_REGISTRY: '0xTODO_AFTER_DEPLOYMENT',
-  
+
   // SUI Clock object - System clock for timestamp operations
   CLOCK: '0x0000000000000000000000000000000000000000000000000000000000000006',
 } as const;
@@ -54,18 +54,18 @@ export const RESOURCE_TYPES = {
 export const NETWORK_CONFIG = {
   // Current active network
   CURRENT_NETWORK: 'TESTNET' as keyof typeof CONTRACT_PACKAGES,
-  
+
   // RPC endpoints
   RPC_ENDPOINTS: {
     DEVNET: 'https://fullnode.devnet.sui.io:443',
     TESTNET: 'https://fullnode.testnet.sui.io:443',
     MAINNET: 'https://fullnode.mainnet.sui.io:443',
   },
-  
+
   // Explorer URLs for different networks
   EXPLORER_URLS: {
     DEVNET: 'https://suiscan.xyz/devnet',
-    TESTNET: 'https://suiscan.xyz/testnet', 
+    TESTNET: 'https://suiscan.xyz/testnet',
     MAINNET: 'https://suiscan.xyz/mainnet',
   },
 } as const;
@@ -112,24 +112,26 @@ export const CONTRACT_FUNCTIONS = {
   ORG: {
     CREATE_ORG: `${getCurrentPackageId()}::org::create_org`,
   },
-  
+
   // Profile functions
   PROFILE: {
     CREATE_PROFILE: `${getCurrentPackageId()}::profile::create_profile`,
   },
-  
+
   // Interaction Log functions
   INTERACTION: {
     LOG_INTERACTION: `${getCurrentPackageId()}::interaction_log::log_interaction`,
   },
-  
+
   // CRM Access Control functions
   ACCESS_CONTROL: {
     CREATE_ORG_REGISTRY: `${getCurrentPackageId()}::crm_access_control::create_org_registry`,
+    CREATE_ORG_AND_REGISTRY: `${getCurrentPackageId()}::crm_access_control::create_org_and_registry`,
     ADD_ORG_MEMBER: `${getCurrentPackageId()}::crm_access_control::add_org_member`,
     UPDATE_MEMBER_ROLE: `${getCurrentPackageId()}::crm_access_control::update_member_role`,
     REMOVE_ORG_MEMBER: `${getCurrentPackageId()}::crm_access_control::remove_org_member`,
     REGISTER_PROFILE: `${getCurrentPackageId()}::crm_access_control::register_profile`,
+    CREATE_AND_REGISTER_PROFILE: `${getCurrentPackageId()}::crm_access_control::create_and_register_profile`,
     CREATE_ENCRYPTED_RESOURCE: `${getCurrentPackageId()}::crm_access_control::create_encrypted_resource`,
     SEAL_APPROVE: `${getCurrentPackageId()}::crm_access_control::seal_approve`,
   },
@@ -143,13 +145,13 @@ export const EVENT_TYPES = {
   // Organization events
   ORG_MEMBER_ADDED: `${getCurrentPackageId()}::crm_access_control::OrgMemberAdded`,
   ORG_MEMBER_REMOVED: `${getCurrentPackageId()}::crm_access_control::OrgMemberRemoved`,
-  
+
   // Profile events
   PROFILE_REGISTERED: `${getCurrentPackageId()}::crm_access_control::ProfileRegistered`,
-  
+
   // Resource events (notes/files)
   RESOURCE_CREATED: `${getCurrentPackageId()}::crm_access_control::ResourceCreated`,
-  
+
   // Interaction events
   INTERACTION_EVENT: `${getCurrentPackageId()}::interaction_log::InteractionEvent`,
 } as const;
@@ -161,10 +163,10 @@ export const EVENT_TYPES = {
 export const GAS_CONFIG = {
   // Standard gas budget for most operations (create profile, log interaction)
   STANDARD_GAS_BUDGET: 10_000_000, // 10M MIST
-  
+
   // Higher gas budget for complex operations (create org with registry)
   HIGH_GAS_BUDGET: 50_000_000, // 50M MIST
-  
+
   // Gas budget for encrypted resource creation
   ENCRYPTED_RESOURCE_GAS_BUDGET: 20_000_000, // 20M MIST
 } as const;

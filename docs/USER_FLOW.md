@@ -7,9 +7,9 @@
 User Action: Click "Create Organization"
 Frontend: Show form with org name
 User: Enter "Acme Web3 Studio"
-Frontend → Sui: Call org::create_org()
-Sui: Creates Org object + OrgAccessRegistry
-Sui: Sets user as ROLE_ADMIN
+Frontend → Sui: Call crm_access_control::create_org_and_registry()
+Sui: Creates Org object + OrgAccessRegistry simultaneously
+Sui: Sets user as ROLE_ADMIN in the registry
 Result: Organization created ✅
 ```
 

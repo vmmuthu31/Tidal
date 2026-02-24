@@ -1,17 +1,21 @@
 "use client";
 
+import { ReactNode } from "react";
 import {
-  WalletProvider as SuietWalletProvider,
-  SuietWallet,
-  SuiWallet,
-  defineStashedWallet,
-} from "@suiet/wallet-kit";
-import "@suiet/wallet-kit/style.css";
-import { type ReactNode } from "react";
+  WalletProvider as SuiWalletProvider,
+  SuiClientProvider,
+  createNetworkConfig,
+} from "@mysten/dapp-kit";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import "@mysten/dapp-kit/dist/index.css";
 
-const StashedWallet = defineStashedWallet({
-  appName: "ZK-IntentBook",
+const { networkConfig } = createNetworkConfig({
+  testnet: { url: "https://fullnode.testnet.sui.io:443", network: "testnet" },
+  mainnet: { url: "https://fullnode.mainnet.sui.io:443", network: "mainnet" },
+  devnet: { url: "https://fullnode.devnet.sui.io:443", network: "devnet" },
 });
+
+const queryClient = new QueryClient();
 
 interface WalletProviderProps {
   children: ReactNode;
@@ -19,11 +23,12 @@ interface WalletProviderProps {
 
 export function WalletProvider({ children }: WalletProviderProps) {
   return (
-    <SuietWalletProvider
-      defaultWallets={[SuietWallet, SuiWallet, StashedWallet]}
-      autoConnect={true}
-    >
-      {children}
-    </SuietWalletProvider>
+    <QueryClientProvider client={queryClient}>
+      <SuiClientProvider networks={networkConfig} defaultNetwork="testnet">
+        <SuiWalletProvider autoConnect={true}>
+          {children}
+        </SuiWalletProvider>
+      </SuiClientProvider>
+    </QueryClientProvider>
   );
 }
