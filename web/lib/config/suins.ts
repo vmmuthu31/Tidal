@@ -23,11 +23,6 @@ const RPC_URL =
   process.env.NEXT_PUBLIC_SUI_RPC_URL ||
   `https://fullnode.${NETWORK}.sui.io:443`;
 
-// SuiNS main shared object IDs (from @mysten/suins constants)
-const SUINS_OBJECT_IDS: Record<NetworkType, string> = {
-  mainnet: "0x6e0ddefc0ad98889c04bab9639e512c21766c5e6366f89e696956d9be6952871",
-  testnet: "0x300369e8909b9a6464da265b9a5a9ab6fe2158a040e84e808628cde7a07ee5a3",
-};
 
 // ── Singleton instances ──────────────────────────────────────────────────────
 
@@ -97,11 +92,9 @@ export async function resolveName(name: string): Promise<SuiNSNameRecord | null>
 // ── Reverse lookup: address → default .sui name ──────────────────────────────
 
 /**
- * Look up the default SuiNS name registered for a Sui address.
- * Returns null if the address has no default name.
- *
- * Implementation: queries the SuiNS reverse_registry dynamic field on the
- * main SuiNS shared object, which maps address → default domain name.
+ * Look up the SuiNS name(s) registered for a Sui address.
+ * Uses the native RPC method `suix_resolveNameServiceNames`.
+ * Returns the first name, or null if none.
  *
  * @example
  *   const name = await getName("0xabc...");
@@ -110,27 +103,14 @@ export async function resolveName(name: string): Promise<SuiNSNameRecord | null>
 export async function getName(address: string): Promise<string | null> {
   try {
     const client = getSuiClient();
-    const suinsObjectId = SUINS_OBJECT_IDS[NETWORK];
+    console.log("[SuiNS] resolveNameServiceNames →", address, "network:", NETWORK);
 
-    // The reverse registry is stored as a dynamic field on the SuiNS object
-    // with type: "address" and value: the user's Sui address
-    const result = await client.getDynamicFieldObject({
-      parentId: suinsObjectId,
-      name: { type: "address", value: address },
-    });
+    const result = await client.resolveNameServiceNames({ address, limit: 5 });
+    console.log("[SuiNS] resolveNameServiceNames result:", JSON.stringify(result));
 
-    if (!result?.data) return null;
-
-    // The value is the domain name string stored in the dynamic field
-    const content = result.data.content as any;
-    const domainName: string | undefined =
-      content?.fields?.value?.fields?.labels
-        ?.slice()
-        .reverse()
-        .join(".") ?? content?.fields?.value;
-
-    return domainName || null;
-  } catch {
+    return result?.data?.[0] ?? null;
+  } catch (err) {
+    console.error("[SuiNS] resolveNameServiceNames error:", err);
     return null;
   }
 }

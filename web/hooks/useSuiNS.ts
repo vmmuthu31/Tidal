@@ -36,8 +36,10 @@ export function useSuiNSName(address: string | null | undefined) {
       return;
     }
 
+    console.log("[useSuiNSName] fetching for address:", address);
     setLoading(true);
     getName(address).then((name) => {
+      console.log("[useSuiNSName] got name:", name, "for address:", address);
       nameCache.set(address, name);
       setSuiName(name);
       setLoading(false);
