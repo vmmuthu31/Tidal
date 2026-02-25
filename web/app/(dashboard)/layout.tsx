@@ -37,7 +37,55 @@ import {
   useCurrentAccount,
   useDisconnectWallet,
   ConnectModal,
+  useSuiClientQuery,
 } from "@mysten/dapp-kit";
+
+const MIST_PER_SUI = 1_000_000_000;
+
+function formatSuiBalance(mist: string): string {
+  const sui = Number(mist) / MIST_PER_SUI;
+  if (sui === 0) return "0.00";
+  if (sui >= 1000) return sui.toLocaleString(undefined, { maximumFractionDigits: 0 });
+  if (sui >= 1) return sui.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 });
+  if (sui >= 0.0001) return sui.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 6 });
+  // Very small balance: show up to 8 decimals, no exponent
+  return sui.toFixed(8).replace(/\.?0+$/, "") || "0";
+}
+
+/**
+ * Shows testnet (or current network) SUI balance for the given address.
+ * Rendered only when address is set; uses useSuiClientQuery so hook is always called with a valid owner.
+ */
+function BalanceChip({ address }: { address: string }) {
+  const network = process.env.NEXT_PUBLIC_SUI_NETWORK || "testnet";
+  const { data, isPending, isError } = useSuiClientQuery("getBalance", { owner: address });
+
+  if (isError || !data) {
+    return (
+      <div className="flex items-center gap-1.5 h-10 px-3 rounded-xl bg-slate-100 border border-slate-100 text-slate-400 text-[10px] font-bold uppercase tracking-widest">
+        <span className="opacity-70">{network}</span>
+        <span>—</span>
+      </div>
+    );
+  }
+
+  const sui = data.totalBalance;
+  const formatted = formatSuiBalance(sui);
+
+  return (
+    <div className="flex items-center gap-1.5 h-10 pl-3 pr-3 rounded-xl bg-slate-50 border border-slate-100 text-slate-600">
+      {isPending ? (
+        <span className="text-[10px] font-bold animate-pulse">…</span>
+      ) : (
+        <>
+          <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">{network}</span>
+          <span className="text-sm font-black tabular-nums">{formatted}</span>
+          <span className="text-[10px] font-bold text-slate-400">SUI</span>
+        </>
+      )}
+    </div>
+  );
+}
 
 /**
  * Header wallet area — supports two auth modes:
@@ -113,9 +161,11 @@ function WalletArea() {
   };
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <button className="flex items-center gap-2 h-10 pl-3 pr-2.5 bg-indigo-50 hover:bg-indigo-100 border border-indigo-100 rounded-xl transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400">
+    <div className="flex items-center gap-2">
+      <BalanceChip address={activeAddress} />
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button className="flex items-center gap-2 h-10 pl-3 pr-2.5 bg-indigo-50 hover:bg-indigo-100 border border-indigo-100 rounded-xl transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400">
           <Wallet className="size-3.5 text-indigo-500 shrink-0" />
           <div className="flex flex-col leading-tight text-left">
             {suiName ? (
@@ -197,6 +247,7 @@ function WalletArea() {
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
+    </div>
   );
 }
 
