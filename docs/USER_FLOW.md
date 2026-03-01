@@ -54,6 +54,9 @@ Result: Onchain data shown ✅
 
 ## Phase 3: Encrypted Notes (Seal Integration)
 
+**Why are notes needed in the CRM?**
+In a Web3 CRM, teams need to store sensitive information about relationships, investment strategies, partner agreements, or direct communications (e.g., OTC deals, grant discussions). These notes must be securely stored so that only authorized team members (e.g., Admins or Managers) can access them, preventing data leaks while maintaining a decentralized, trustless infrastructure. Encrypted notes ensure that customer and organizational intelligence remains private but composable within the ecosystem.
+
 ### Step 5: Create Private Note
 ```
 User Action: Profile → Notes → "Add Note"
