@@ -48,8 +48,8 @@ export function ProfileFiles({ profileId }: ProfileFilesProps) {
 
       // MOCK DATA for now until we have full auth context
       const MOCK_USER_ADDRESS = "0x1234567890abcdef1234567890abcdef12345678";
-      const MOCK_ORG_ID = "0xorg123";
-      const MOCK_ORG_REGISTRY_ID = "0xorgreg123";
+      const MOCK_ORG_ID = "0x0000000000000000000000000000000000000000000000000000000000000123";
+      const MOCK_ORG_REGISTRY_ID = "0x0000000000000000000000000000000000000000000000000000000000000456";
 
       const result = await crmEncryptionService.encryptAndUploadResource(
         file,
