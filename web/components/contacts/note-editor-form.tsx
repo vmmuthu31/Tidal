@@ -34,9 +34,31 @@ export function NoteEditorForm({
     setLoading(true);
     setError(null);
     try {
-      // Flow: 1) Seal encrypt → 2) Walrus upload → 3) Sui create_encrypted_resource
-      // Placeholder until Seal/Walrus SDK and org_id are wired
-      console.log("Note save placeholder", { profileId, content, accessLevel });
+      // 1) Direct Walrus upload (Phase 1)
+      // 2) Seal encrypt + Walrus upload (Phase 2)
+      console.log("Encrypting and uploading note...", { profileId, content, accessLevel });
+      const { crmEncryptionService } = await import("@/lib/services/encryptionService");
+
+      // MOCK DATA for now until we have full auth context
+      const MOCK_USER_ADDRESS = "0x1234567890abcdef1234567890abcdef12345678";
+      const MOCK_ORG_ID = "0xorg123";
+      const MOCK_ORG_REGISTRY_ID = "0xorgreg123";
+
+      const result = await crmEncryptionService.encryptAndUploadResource(
+        content,
+        profileId,
+        MOCK_ORG_ID,
+        MOCK_ORG_REGISTRY_ID,
+        'note',
+        accessLevel,
+        MOCK_USER_ADDRESS
+      );
+
+      if (!result.success) {
+        throw new Error(result.error || "Failed to encrypt and upload to Walrus");
+      }
+      console.log("Uploaded successfully! Encryption ID:", result.encryptionId, "Blob ID:", result.blobId);
+
       setContent("");
       onSuccess?.();
     } catch (err: unknown) {

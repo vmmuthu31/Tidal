@@ -37,12 +37,36 @@ export function ProfileFiles({ profileId }: ProfileFilesProps) {
     if (!file) return;
     setLoading(true);
     try {
-      // Flow: read file → Seal encrypt → Walrus upload → create_encrypted_resource(resource_type: 2)
-      console.log("Upload placeholder", {
+      // 2) Seal encrypt + Walrus upload (Phase 2)
+      console.log("Encrypting and uploading file...", {
         profileId,
         file: file.name,
         accessLevel,
       });
+
+      const { crmEncryptionService } = await import("@/lib/services/encryptionService");
+
+      // MOCK DATA for now until we have full auth context
+      const MOCK_USER_ADDRESS = "0x1234567890abcdef1234567890abcdef12345678";
+      const MOCK_ORG_ID = "0xorg123";
+      const MOCK_ORG_REGISTRY_ID = "0xorgreg123";
+
+      const result = await crmEncryptionService.encryptAndUploadResource(
+        file,
+        profileId,
+        MOCK_ORG_ID,
+        MOCK_ORG_REGISTRY_ID,
+        'file',
+        accessLevel,
+        MOCK_USER_ADDRESS
+      );
+
+      if (!result.success) {
+        throw new Error(result.error || "Failed to encrypt and upload file");
+      }
+
+      console.log("Uploaded encrypted file successfully! Encryption ID:", result.encryptionId, "Blob ID:", result.blobId);
+
       setFile(null);
     } finally {
       setLoading(false);
