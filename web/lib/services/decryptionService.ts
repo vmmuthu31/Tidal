@@ -124,13 +124,13 @@ export class DocumentDecryptionService {
       }
 
       const decryptedFileUrls: string[] = [];
-      
+
       // Process each resource
       for (let i = 0; i < resources.length; i++) {
         const resource = resources[i];
         const fileName = resource.file_name || `${resource.resource_type}_${i + 1}`;
         onProgress?.(`Decrypting resource ${i + 1}/${resources.length}: ${fileName}...`);
-        
+
         const moveCallConstructor = this.createMoveCallConstructor(
           resource.resource_id,
           orgRegistryId,
@@ -159,7 +159,10 @@ export class DocumentDecryptionService {
           console.log(`📦 Encrypted bytes length: ${encryptedBytes.length}`);
 
           // Parse the encrypted object to get the full ID (same as main frontend)
-          const fullId = EncryptedObject.parse(encryptedBytes).id;
+          let fullId = EncryptedObject.parse(encryptedBytes).id;
+          if (!fullId.startsWith('0x')) {
+            fullId = '0x' + fullId;
+          }
           console.log(`🆔 Full ID from encrypted object: ${fullId}`);
 
           // Create transaction for move call (same as main frontend)

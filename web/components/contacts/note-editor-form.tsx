@@ -1,6 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { useCurrentAccount, useSignAndExecuteTransaction, useSuiClient } from "@mysten/dapp-kit";
+import { Transaction } from "@mysten/sui/transactions";
+import CONTRACT_CONFIG, { buildExplorerUrl } from "@/lib/config/contracts";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -24,13 +28,23 @@ export function NoteEditorForm({
   accessLevelOptions,
   onSuccess,
 }: NoteEditorFormProps) {
+  const account = useCurrentAccount();
+  const client = useSuiClient();
+  const { mutateAsync: signAndExecuteTransaction } = useSignAndExecuteTransaction();
+
   const [content, setContent] = useState("");
-  const [accessLevel, setAccessLevel] = useState<OrgRole>(3);
+  const [accessLeve
+    l, setAccessLevel] = useState<OrgRole>(3);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!account) {
+      setError("Please connect your wallet first");
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
@@ -40,7 +54,6 @@ export function NoteEditorForm({
       const { crmEncryptionService } = await import("@/lib/services/encryptionService");
 
       // MOCK DATA for now until we have full auth context
-      const MOCK_USER_ADDRESS = "0x1234567890abcdef1234567890abcdef12345678";
       const MOCK_ORG_ID = "0x0000000000000000000000000000000000000000000000000000000000000123";
       const MOCK_ORG_REGISTRY_ID = "0x0000000000000000000000000000000000000000000000000000000000000456";
 
@@ -51,13 +64,54 @@ export function NoteEditorForm({
         MOCK_ORG_REGISTRY_ID,
         'note',
         accessLevel,
-        MOCK_USER_ADDRESS
+        account.address
       );
 
-      if (!result.success) {
+      if (!result.success || !result.encryptionId || !result.blobId) {
         throw new Error(result.error || "Failed to encrypt and upload to Walrus");
       }
       console.log("Uploaded successfully! Encryption ID:", result.encryptionId, "Blob ID:", result.blobId);
+
+      // 3) Create the EncryptedResource object on Sui (Phase 3)
+      console.log("Minting EncryptedResource on Sui...");
+      const tx = new Transaction();
+
+      // Ensure encryptionId does not have 0x prefix for the vector<u8> argument
+      const cleanEncId = result.encryptionId.startsWith('0x') ? result.encryptionId.slice(2) : result.encryptionId;
+
+      const walrusBlobIdBytes = new TextEncoder().encode(result.blobId);
+      const sealEncryptionIdBytes = new TextEncoder().encode(cleanEncId);
+
+      const [resourceObj] = tx.moveCall({
+        target: CONTRACT_CONFIG.FUNCTIONS.ACCESS_CONTROL.CREATE_ENCRYPTED_RESOURCE,
+        arguments: [
+          tx.pure.address(profileId.trim()),
+          tx.pure.address(MOCK_ORG_ID),
+          tx.pure.u8(CONTRACT_CONFIG.RESOURCE_TYPES.NOTE),
+          tx.pure.vector('u8', walrusBlobIdBytes),
+          tx.pure.vector('u8', sealEncryptionIdBytes),
+          tx.pure.u8(accessLevel),
+          tx.pure.u64(Date.now()),
+        ],
+      });
+      tx.transferObjects([resourceObj], tx.pure.address(account.address));
+
+      const res = await signAndExecuteTransaction({
+        transaction: tx
+      });
+
+      console.log("Transaction Submitted:", res.digest);
+      const txResult = await client.waitForTransaction({
+        digest: res.digest,
+        options: { showObjectChanges: true }
+      });
+
+      // Find the created object ID
+      const createdObj = txResult.objectChanges?.find((change: any) => change.type === 'created' && change.objectType.includes('EncryptedResource'));
+      const resourceObjectId = createdObj ? (createdObj as any).objectId : "Unknown";
+
+      console.log(" Resource Object ID created:", resourceObjectId);
+      alert(`Note saved! SUI Object ID required for test decryption: ${resourceObjectId}`);
 
       setContent("");
       onSuccess?.();

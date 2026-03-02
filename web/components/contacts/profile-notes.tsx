@@ -97,7 +97,7 @@ export function ProfileNotes({ profileId }: ProfileNotesProps) {
             Enter the Blob ID and Encryption ID from your console logs to simulate fetching a note from Walrus and decrypting it with Seal using your active wallet session.
           </p>
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <input
                 type="text"
                 placeholder="Blob ID"
@@ -109,6 +109,12 @@ export function ProfileNotes({ profileId }: ProfileNotesProps) {
                 placeholder="Encryption ID"
                 className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors"
                 id="test-encryption-id"
+              />
+              <input
+                type="text"
+                placeholder="Resource Object ID"
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors"
+                id="test-resource-id"
               />
             </div>
 
@@ -123,7 +129,8 @@ export function ProfileNotes({ profileId }: ProfileNotesProps) {
                 onClick={async () => {
                   const blobId = (document.getElementById("test-blob-id") as HTMLInputElement).value;
                   const encId = (document.getElementById("test-encryption-id") as HTMLInputElement).value;
-                  if (!blobId || !encId) return alert("Enter both IDs");
+                  const resId = (document.getElementById("test-resource-id") as HTMLInputElement).value;
+                  if (!blobId || !encId || !resId) return alert("Enter all 3 IDs");
 
                   const outputEl = document.getElementById("test-output");
                   if (outputEl) outputEl.innerText = "Generating Ephemeral Session Key...";
@@ -149,7 +156,7 @@ export function ProfileNotes({ profileId }: ProfileNotesProps) {
 
                     // 5. Structure the resource for the decryption service
                     const mockResource: ResourceMetadata = {
-                      resource_id: encId, // This should be the object ID of the actual resource on-chain
+                      resource_id: resId, // object ID of the actual resource on-chain
                       profile_id: profileId,
                       org_id: MOCK_ORG_REGISTRY_ID,
                       resource_type: 'note',
