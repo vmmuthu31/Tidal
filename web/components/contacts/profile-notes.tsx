@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import { NoteEditorForm } from "@/components/contacts/note-editor-form";
 import { ACCESS_LEVEL_OPTIONS } from "@/lib/types/crm";
+import CONTRACT_CONFIG from "@/lib/config/contracts";
 
 interface ProfileNotesProps {
   profileId: string;
@@ -151,8 +152,8 @@ export function ProfileNotes({ profileId }: ProfileNotesProps) {
 
                     if (outputEl) outputEl.innerText = "Wallet authorized! Fetching and decrypting from Walrus...";
 
-                    // 4. MOCK ORG METADATA (Replace later)
-                    const MOCK_ORG_REGISTRY_ID = "0x0000000000000000000000000000000000000000000000000000000000000456";
+                    // 4. Real OrgAccessRegistry from Sui Testnet
+                    const MOCK_ORG_REGISTRY_ID = CONTRACT_CONFIG.SHARED_OBJECTS.EXAMPLE_ORG_REGISTRY;
 
                     // 5. Structure the resource for the decryption service
                     const mockResource: ResourceMetadata = {

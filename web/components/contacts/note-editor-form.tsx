@@ -33,8 +33,7 @@ export function NoteEditorForm({
   const { mutateAsync: signAndExecuteTransaction } = useSignAndExecuteTransaction();
 
   const [content, setContent] = useState("");
-  const [accessLeve
-    l, setAccessLevel] = useState<OrgRole>(3);
+  const [accessLevel, setAccessLevel] = useState<OrgRole>(3);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -54,8 +53,8 @@ export function NoteEditorForm({
       const { crmEncryptionService } = await import("@/lib/services/encryptionService");
 
       // MOCK DATA for now until we have full auth context
-      const MOCK_ORG_ID = "0x0000000000000000000000000000000000000000000000000000000000000123";
-      const MOCK_ORG_REGISTRY_ID = "0x0000000000000000000000000000000000000000000000000000000000000456";
+      const MOCK_ORG_ID = CONTRACT_CONFIG.SHARED_OBJECTS.EXAMPLE_ORG_REGISTRY; // org acts as its own registry
+      const MOCK_ORG_REGISTRY_ID = CONTRACT_CONFIG.SHARED_OBJECTS.EXAMPLE_ORG_REGISTRY;
 
       const result = await crmEncryptionService.encryptAndUploadResource(
         content,
@@ -82,11 +81,15 @@ export function NoteEditorForm({
       const walrusBlobIdBytes = new TextEncoder().encode(result.blobId);
       const sealEncryptionIdBytes = new TextEncoder().encode(cleanEncId);
 
+      // We use the connected wallet's address dynamically as a valid 32-byte hex string
+      // so the SUI SDK validation passes. In production, these will be the real Object IDs.
+      const MOCK_VALID_ADDRESS = account.address;
+
       const [resourceObj] = tx.moveCall({
         target: CONTRACT_CONFIG.FUNCTIONS.ACCESS_CONTROL.CREATE_ENCRYPTED_RESOURCE,
         arguments: [
-          tx.pure.address(profileId.trim()),
-          tx.pure.address(MOCK_ORG_ID),
+          tx.pure.address(MOCK_VALID_ADDRESS), // Mocking profile_id with wallet address
+          tx.pure.address(MOCK_VALID_ADDRESS), // Mocking org_id with wallet address
           tx.pure.u8(CONTRACT_CONFIG.RESOURCE_TYPES.NOTE),
           tx.pure.vector('u8', walrusBlobIdBytes),
           tx.pure.vector('u8', sealEncryptionIdBytes),

@@ -24,9 +24,8 @@ export const SHARED_OBJECTS = {
   // Profile Access Registry - Tracks profile ownership and org associations
   PROFILE_REGISTRY: '0x97ec5d19b9cdce34ff271ed23bf096959238169193b220cba93a45e563cf77f3',
 
-  // Organization Access Registry - Example org registry (each org has its own)
-  // Note: Each organization will have its own registry created dynamically
-  EXAMPLE_ORG_REGISTRY: '0xTODO_AFTER_DEPLOYMENT',
+  // Organization Access Registry - TestOrg created on Sui Testnet
+  EXAMPLE_ORG_REGISTRY: '0x44688d0e99fef7b390b56665f9b97706cb24c7ce2bc3afd575b0116d3affd54a',
 
   // SUI Clock object - System clock for timestamp operations
   CLOCK: '0x0000000000000000000000000000000000000000000000000000000000000006',
