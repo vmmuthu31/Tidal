@@ -9,8 +9,8 @@ import {
   Loader2,
   Send,
 } from "lucide-react";
-import { useCurrentAccount, useSignAndExecuteTransaction } from "@mysten/dapp-kit";
 import { Transaction } from "@mysten/sui/transactions";
+import { useUnifiedAccount, useUnifiedSignAndExecuteTransaction } from "@/hooks/useUnifiedAuth";
 import { toast } from "sonner";
 import CONTRACT_CONFIG from "@/lib/config/contracts";
 import { Button } from "@/components/ui/button";
@@ -77,9 +77,8 @@ function formatDate(iso: string) {
 }
 
 export function ProfileInteractions({ profileId }: ProfileInteractionsProps) {
-  const account = useCurrentAccount();
-  const { mutateAsync: signAndExecuteTransaction } =
-    useSignAndExecuteTransaction();
+  const { address } = useUnifiedAccount();
+  const { signAndExecuteTransaction } = useUnifiedSignAndExecuteTransaction();
   const [type, setType] = useState("message");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
@@ -87,8 +86,8 @@ export function ProfileInteractions({ profileId }: ProfileInteractionsProps) {
 
   const handleLog = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!account) {
-      setError("Connect your wallet first");
+    if (!address) {
+      setError("Connect your wallet or sign in with ZK Login first");
       return;
     }
     if (!message.trim()) {
@@ -209,7 +208,7 @@ export function ProfileInteractions({ profileId }: ProfileInteractionsProps) {
           )}
           <Button
             type="submit"
-            disabled={loading || !account}
+            disabled={loading || !address}
             className="h-12 px-6 rounded-xl font-bold bg-[#1a1a1a] hover:bg-black text-white gap-2"
           >
             {loading ? (

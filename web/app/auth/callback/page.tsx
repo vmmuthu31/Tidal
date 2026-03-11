@@ -11,11 +11,11 @@ import { ShieldCheck } from "lucide-react";
 export default function AuthCallbackPage() {
   const router = useRouter();
   const [status, setStatus] = useState<"processing" | "success" | "error">("processing");
+  const [statusText, setStatusText] = useState("Generating zero-knowledge proof…");
   const [errorMsg, setErrorMsg] = useState("");
   const processingRef = useRef(false);
 
   useEffect(() => {
-    // Extract JWT (id_token) from the URL hash fragment returned by Google OAuth
     const hash = window.location.hash;
     if (!hash || processingRef.current) return;
     processingRef.current = true;
@@ -31,17 +31,16 @@ export default function AuthCallbackPage() {
 
     const finalize = async () => {
       try {
-        // 1. Retrieve the ephemeral session we saved before redirecting to Google
+        // 1. Retrieve ephemeral session
         const session = SessionManager.getSession();
         if (!session) {
           throw new Error("No active zkLogin session found. Please start the login process again.");
         }
 
-        // 2. Determine the user salt (deterministic from JWT claims)
+        // 2. Determine user salt
         const decodedJWT = jwtDecode<DecodedJWT>(jwtToken);
         let salt = session.userSalt;
         if (!salt) {
-          // Derive a deterministic salt from the user's sub claim
           const encoder = new TextEncoder();
           const encoded = encoder.encode(decodedJWT.sub);
           const hashVal = Array.from(encoded).reduce(
@@ -51,7 +50,7 @@ export default function AuthCallbackPage() {
           salt = Math.abs(hashVal).toString();
         }
 
-        // 3. Recreate the ephemeral keypair and request a ZK proof from Mysten's prover
+        // 3. Generate ZK proof
         const ephemeralKeyPair = ZkLoginService.recreateKeyPair(session.ephemeralPrivateKey);
         const zkProof = await ZkLoginService.fetchZkProof({
           jwtToken,
@@ -61,10 +60,10 @@ export default function AuthCallbackPage() {
           userSalt: salt,
         });
 
-        // 4. Compute the Sui address for this zkLogin user
+        // 4. Compute Sui address
         const address = ZkLoginService.getZkLoginAddress(jwtToken, salt);
 
-        // 5. Persist the proof + session data so the app can sign future transactions
+        // 5. Persist proof
         SessionManager.saveProof({
           zkProof,
           jwtToken,
@@ -75,16 +74,43 @@ export default function AuthCallbackPage() {
           ephemeralPrivateKey: session.ephemeralPrivateKey,
         });
 
-        // 6. Clean up the temporary setup session
-        SessionManager.clearSession();
+        // 6. Save user to MongoDB (non-fatal — ZK proof is already saved)
+        setStatusText("Saving your profile…");
+        const userName = session.pendingUserName || decodedJWT.name || "User";
+        const userEmail = decodedJWT.email || "";
 
-        // Remove hash fragment from URL
+        let isNewUser = true;
+        let hasOrg = false;
+        try {
+          const res = await fetch("/api/users", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              suiAddress: address,
+              googleSub: decodedJWT.sub,
+              name: userName,
+              email: userEmail,
+            }),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            isNewUser = data.isNewUser ?? true;
+            hasOrg = data.user?.hasOrg ?? false;
+          }
+        } catch {
+          // MongoDB unreachable — still proceed, the ZK proof is valid
+          console.warn("Could not save user to DB; continuing with onboarding.");
+        }
+
+        // 7. Clean up ephemeral session
+        SessionManager.clearSession();
         window.history.replaceState(null, "", window.location.pathname + window.location.search);
 
         setStatus("success");
 
-        // Redirect back to dashboard after brief success flash
-        setTimeout(() => router.replace("/dashboard"), 1200);
+        // New user or no org → onboarding; returning user with org → dashboard
+        const destination = (isNewUser || !hasOrg) ? "/onboarding" : "/dashboard";
+        setTimeout(() => router.replace(destination), 1200);
       } catch (err: any) {
         setStatus("error");
         setErrorMsg(err.message || "Failed to finalize zkLogin. Please try again.");
@@ -104,10 +130,8 @@ export default function AuthCallbackPage() {
               <span className="size-10 rounded-full border-4 border-indigo-100 border-t-indigo-500 animate-spin block" />
             </div>
             <div className="space-y-2">
-              <h2 className="text-2xl font-black text-[#1a1a1a] tracking-tight">Generating ZK Proof</h2>
-              <p className="text-sm text-slate-500 leading-relaxed">
-                Requesting a zero-knowledge proof from Mysten Labs' prover and deriving your Sui wallet address…
-              </p>
+              <h2 className="text-2xl font-black text-[#1a1a1a] tracking-tight">Setting up your account</h2>
+              <p className="text-sm text-slate-500 leading-relaxed">{statusText}</p>
             </div>
             <div className="flex items-center gap-3 bg-slate-50 rounded-2xl px-5 py-4">
               <ShieldCheck className="size-5 text-indigo-500 shrink-0" />
@@ -127,7 +151,7 @@ export default function AuthCallbackPage() {
             </div>
             <div className="space-y-2">
               <h2 className="text-2xl font-black text-[#1a1a1a] tracking-tight">You're in!</h2>
-              <p className="text-sm text-slate-500">ZK proof generated. Redirecting to your workspace…</p>
+              <p className="text-sm text-slate-500">Account ready. Taking you to your workspace…</p>
             </div>
           </>
         )}

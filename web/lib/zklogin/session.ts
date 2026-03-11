@@ -9,6 +9,7 @@ export interface ZkLoginSessionData {
     maxEpoch: string;
     nonce: string;
     userSalt?: string;
+    pendingUserName?: string;
 }
 
 export interface CachedProofData {

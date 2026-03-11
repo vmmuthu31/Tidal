@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useCurrentAccount, useSignAndExecuteTransaction } from "@mysten/dapp-kit";
 import { Transaction } from "@mysten/sui/transactions";
+import { useUnifiedAccount, useUnifiedSignAndExecuteTransaction } from "@/hooks/useUnifiedAuth";
 import CONTRACT_CONFIG, { buildExplorerUrl } from "@/lib/config/contracts";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -11,8 +11,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
 export function AddNoteForm() {
-    const account = useCurrentAccount();
-    const { mutateAsync: signAndExecuteTransaction } = useSignAndExecuteTransaction();
+    const { address } = useUnifiedAccount();
+    const { signAndExecuteTransaction } = useUnifiedSignAndExecuteTransaction();
 
     // Reference Fields
     const [profileId, setProfileId] = useState("");
@@ -27,8 +27,8 @@ export function AddNoteForm() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!account) {
-            setError("Connect your wallet first");
+        if (!address) {
+            setError("Connect your wallet or sign in with ZK Login first");
             return;
         }
         if (!profileId.trim() || !orgId.trim()) {
@@ -98,7 +98,7 @@ export function AddNoteForm() {
                     value={orgId}
                     onChange={(e) => setOrgId(e.target.value)}
                     placeholder="0x…"
-                    disabled={loading || !account}
+                    disabled={loading || !address}
                 />
                 <p className="text-xs text-muted-foreground">The Org this note belongs to.</p>
             </div>
@@ -110,7 +110,7 @@ export function AddNoteForm() {
                     value={profileId}
                     onChange={(e) => setProfileId(e.target.value)}
                     placeholder="0x…"
-                    disabled={loading || !account}
+                    disabled={loading || !address}
                 />
                 <p className="text-xs text-muted-foreground">The specific Profile to attach this note to.</p>
             </div>
@@ -123,7 +123,7 @@ export function AddNoteForm() {
                         value={noteTitle}
                         onChange={(e) => setNoteTitle(e.target.value)}
                         placeholder="e.g. Q3 Sales Call Review"
-                        disabled={loading || !account}
+                        disabled={loading || !address}
                     />
                 </div>
 
@@ -135,7 +135,7 @@ export function AddNoteForm() {
                         onChange={(e) => setNoteContent(e.target.value)}
                         placeholder="Write your private, encrypted note here..."
                         className="min-h-[120px]"
-                        disabled={loading || !account}
+                        disabled={loading || !address}
                     />
                     <p className="text-xs text-muted-foreground">
                         This content will be encrypted by Seal before uploading to Walrus.
@@ -144,7 +144,7 @@ export function AddNoteForm() {
             </div>
 
             {error && <p className="text-sm text-destructive">{error}</p>}
-            <Button type="submit" disabled={loading || !account} className="w-full">
+            <Button type="submit" disabled={loading || !address} className="w-full">
                 {loading ? "Encrypting & Saving…" : "Save Secure Note"}
             </Button>
         </form>

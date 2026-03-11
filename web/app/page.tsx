@@ -1,15 +1,31 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useCurrentAccount } from "@mysten/dapp-kit";
+import { SessionManager } from "@/lib/zklogin/session";
 
 export default function Home() {
   const router = useRouter();
+  const walletAccount = useCurrentAccount();
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    // Always go to dashboard — the dashboard handles showing Sign In or the actual content
-    router.replace("/dashboard");
-  }, [router]);
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+
+    const zkProof = SessionManager.getProof();
+    const isAuthenticated = !!walletAccount || !!zkProof;
+
+    if (isAuthenticated) {
+      router.replace("/dashboard");
+    } else {
+      router.replace("/login");
+    }
+  }, [mounted, walletAccount, router]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#fafbfc]">

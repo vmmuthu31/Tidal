@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useCurrentAccount, useSignAndExecuteTransaction, useSuiClient } from "@mysten/dapp-kit";
+import { useSuiClient } from "@mysten/dapp-kit";
 import { Transaction } from "@mysten/sui/transactions";
+import { useUnifiedAccount, useUnifiedSignAndExecuteTransaction } from "@/hooks/useUnifiedAuth";
 import CONTRACT_CONFIG, { buildExplorerUrl } from "@/lib/config/contracts";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -30,9 +31,9 @@ export function NoteEditorForm({
   accessLevelOptions,
   onSuccess,
 }: NoteEditorFormProps) {
-  const account = useCurrentAccount();
+  const { address } = useUnifiedAccount();
   const client = useSuiClient();
-  const { mutateAsync: signAndExecuteTransaction } = useSignAndExecuteTransaction();
+  const { signAndExecuteTransaction } = useUnifiedSignAndExecuteTransaction();
 
   const [content, setContent] = useState("");
   const [accessLevel, setAccessLevel] = useState<OrgRole>(3);
@@ -41,8 +42,8 @@ export function NoteEditorForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!account) {
-      setError("Please connect your wallet first");
+    if (!address) {
+      setError("Please connect your wallet or sign in with ZK Login first");
       return;
     }
 
@@ -60,7 +61,7 @@ export function NoteEditorForm({
         MOCK_ORG_REGISTRY_ID,
         "note",
         accessLevel,
-        account.address
+        address!
       );
 
       if (!result.success || !result.encryptionId || !result.blobId) {
@@ -73,7 +74,7 @@ export function NoteEditorForm({
         : result.encryptionId;
       const walrusBlobIdBytes = new TextEncoder().encode(result.blobId);
       const sealEncryptionIdBytes = new TextEncoder().encode(cleanEncId);
-      const MOCK_VALID_ADDRESS = account.address;
+      const MOCK_VALID_ADDRESS = address!;
 
       const [resourceObj] = tx.moveCall({
         target: CONTRACT_CONFIG.FUNCTIONS.ACCESS_CONTROL.CREATE_ENCRYPTED_RESOURCE,
@@ -87,7 +88,7 @@ export function NoteEditorForm({
           tx.pure.u64(Date.now()),
         ],
       });
-      tx.transferObjects([resourceObj], tx.pure.address(account.address));
+      tx.transferObjects([resourceObj], tx.pure.address(address!));
 
       const res = await signAndExecuteTransaction({ transaction: tx });
       const txResult = await client.waitForTransaction({

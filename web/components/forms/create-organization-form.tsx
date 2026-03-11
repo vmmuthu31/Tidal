@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useCurrentAccount, useSignAndExecuteTransaction } from "@mysten/dapp-kit";
 import { Transaction } from "@mysten/sui/transactions";
+import { useUnifiedAccount, useUnifiedSignAndExecuteTransaction } from "@/hooks/useUnifiedAuth";
 import CONTRACT_CONFIG, { buildExplorerUrl } from "@/lib/config/contracts";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -16,16 +16,16 @@ interface CreateOrganizationFormProps {
 export function CreateOrganizationForm({
   onSuccess,
 }: CreateOrganizationFormProps) {
-  const account = useCurrentAccount();
-  const { mutateAsync: signAndExecuteTransaction } = useSignAndExecuteTransaction();
+  const { address } = useUnifiedAccount();
+  const { signAndExecuteTransaction } = useUnifiedSignAndExecuteTransaction();
   const [orgName, setOrgName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!account) {
-      setError("Please connect your wallet first");
+    if (!address) {
+      setError("Please connect your wallet or sign in with ZK Login first");
       return;
     }
     if (!orgName.trim()) {
@@ -70,13 +70,13 @@ export function CreateOrganizationForm({
           value={orgName}
           onChange={(e) => setOrgName(e.target.value)}
           placeholder="e.g. Acme Web3 Studio"
-          disabled={loading || !account}
+          disabled={loading || !address}
         />
       </div>
       {error && <p className="text-sm text-destructive">{error}</p>}
       <Button
         type="submit"
-        disabled={loading || !account || !orgName.trim()}
+        disabled={loading || !address || !orgName.trim()}
       >
         {loading ? "Creating…" : "Create Organization"}
       </Button>

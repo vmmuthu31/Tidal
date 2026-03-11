@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useCurrentAccount, useSignAndExecuteTransaction } from "@mysten/dapp-kit";
 import { Transaction } from "@mysten/sui/transactions";
+import { useUnifiedAccount, useUnifiedSignAndExecuteTransaction } from "@/hooks/useUnifiedAuth";
 import CONTRACT_CONFIG, { buildExplorerUrl } from "@/lib/config/contracts";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -14,8 +14,8 @@ import { CheckCircle2, Loader2, AlertCircle } from "lucide-react";
 
 export function AddContactForm() {
   const router = useRouter();
-  const account = useCurrentAccount();
-  const { mutateAsync: signAndExecuteTransaction } = useSignAndExecuteTransaction();
+  const { address } = useUnifiedAccount();
+  const { signAndExecuteTransaction } = useUnifiedSignAndExecuteTransaction();
 
   // Raw input (can be "0x…" address or "alice.sui" name)
   const [walletInput, setWalletInput] = useState("");
@@ -32,8 +32,8 @@ export function AddContactForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!account) {
-      setError("Connect your wallet first");
+    if (!address) {
+      setError("Connect your wallet or sign in with ZK Login first");
       return;
     }
     const finalAddress = resolvedAddress ?? walletInput.trim();
@@ -102,7 +102,7 @@ export function AddContactForm() {
           value={profileRegistryId}
           onChange={(e) => setProfileRegistryId(e.target.value)}
           placeholder="0x..."
-          disabled={loading || !account}
+          disabled={loading || !address}
         />
       </div>
       <div className="space-y-2">
@@ -112,7 +112,7 @@ export function AddContactForm() {
           value={orgId}
           onChange={(e) => setOrgId(e.target.value)}
           placeholder="0x…"
-          disabled={loading || !account}
+          disabled={loading || !address}
         />
       </div>
       <div className="space-y-2">
@@ -123,7 +123,7 @@ export function AddContactForm() {
             value={walletInput}
             onChange={(e) => setWalletInput(e.target.value)}
             placeholder="0x… or alice.sui"
-            disabled={loading || !account}
+            disabled={loading || !address}
             className={inputError ? "border-red-300 focus-visible:ring-red-200" : suiName ? "border-emerald-300 focus-visible:ring-emerald-100" : ""}
           />
           {/* Resolution status indicator */}
@@ -155,7 +155,7 @@ export function AddContactForm() {
           value={uniqueTag}
           onChange={(e) => setUniqueTag(e.target.value)}
           placeholder="e.g. CONTACT_001"
-          disabled={loading || !account}
+          disabled={loading || !address}
         />
       </div>
       <div className="space-y-2">
@@ -169,7 +169,7 @@ export function AddContactForm() {
         />
       </div>
       {error && <p className="text-sm text-destructive">{error}</p>}
-      <Button type="submit" disabled={loading || !account}>
+      <Button type="submit" disabled={loading || !address}>
         {loading ? "Creating…" : "Create Contact"}
       </Button>
     </form>

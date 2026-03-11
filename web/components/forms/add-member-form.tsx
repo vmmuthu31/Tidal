@@ -1,8 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { useCurrentAccount, useSignAndExecuteTransaction } from "@mysten/dapp-kit";
 import { Transaction } from "@mysten/sui/transactions";
+import {
+  useUnifiedAccount,
+  useUnifiedSignAndExecuteTransaction,
+} from "@/hooks/useUnifiedAuth";
 import CONTRACT_CONFIG, { buildExplorerUrl } from "@/lib/config/contracts";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -18,18 +21,20 @@ import {
 import { ROLE_LABELS, type OrgRole } from "@/lib/types/crm";
 
 export function AddMemberForm() {
-  const account = useCurrentAccount();
-  const { mutateAsync: signAndExecuteTransaction } = useSignAndExecuteTransaction();
-  const [registryId, setRegistryId] = useState<string>(CONTRACT_CONFIG.SHARED_OBJECTS.EXAMPLE_ORG_REGISTRY || "");
-  const [address, setAddress] = useState("");
+  const { address } = useUnifiedAccount();
+  const { signAndExecuteTransaction } = useUnifiedSignAndExecuteTransaction();
+  const [registryId, setRegistryId] = useState<string>(
+    CONTRACT_CONFIG.SHARED_OBJECTS.EXAMPLE_ORG_REGISTRY || "",
+  );
+  // const [address, setAddress] = useState("");
   const [role, setRole] = useState<OrgRole>(2);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!account) {
-      setError("Connect your wallet first");
+    if (!address) {
+      setError("Connect your wallet or sign in with ZK Login first");
       return;
     }
     if (!registryId.trim()) {
@@ -58,7 +63,8 @@ export function AddMemberForm() {
         description: `Wallet address has been granted role access.`,
         action: {
           label: "Explorer",
-          onClick: () => window.open(buildExplorerUrl(res.digest, "tx"), "_blank"),
+          onClick: () =>
+            window.open(buildExplorerUrl(res.digest, "tx"), "_blank"),
         },
       });
 
@@ -80,7 +86,7 @@ export function AddMemberForm() {
           value={registryId}
           onChange={(e) => setRegistryId(e.target.value)}
           placeholder="0x..."
-          disabled={loading || !account}
+          disabled={loading || !address}
         />
       </div>
       <div className="space-y-2">
@@ -90,7 +96,7 @@ export function AddMemberForm() {
           value={address}
           onChange={(e) => setAddress(e.target.value)}
           placeholder="0x…"
-          disabled={loading || !account}
+          disabled={loading || !address}
         />
       </div>
       <div className="space-y-2">
@@ -115,7 +121,7 @@ export function AddMemberForm() {
         </Select>
       </div>
       {error && <p className="text-sm text-destructive">{error}</p>}
-      <Button type="submit" disabled={loading || !account}>
+      <Button type="submit" disabled={loading || !address}>
         {loading ? "Adding…" : "Add Member"}
       </Button>
     </form>
