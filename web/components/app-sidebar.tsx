@@ -1,20 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   Users,
   Building2,
-  Settings,
-  UserPlus,
-  HelpCircle,
   ExternalLink,
   ChevronRight,
-  Menu,
   Sparkles,
   ShieldCheck,
   Zap,
+  UserPlus,
+  UserCog,
 } from "lucide-react";
 import {
   Sidebar,
@@ -28,16 +26,12 @@ import {
   SidebarFooter,
   SidebarSeparator,
 } from "@/components/ui/sidebar";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { useUser } from "@/hooks/useUser";
 
 const mainItems = [
-  {
-    title: "Dashboard",
-    href: "/dashboard",
-    icon: LayoutDashboard,
-    badge: "Live",
-  },
+  { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard, badge: "Live" },
   { title: "Contacts", href: "/contacts", icon: Users },
   { title: "Organization", href: "/organization", icon: Building2 },
 ];
@@ -52,8 +46,24 @@ const footerItems = [
   { title: "Upgrade Plan", href: "/upgrade", icon: Sparkles },
 ];
 
+function getInitials(name: string) {
+  return name
+    .split(" ")
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+}
+
 export function AppSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, loading } = useUser();
+
+  const displayName = user?.name ?? "—";
+  const displayRole = user?.role === "admin" ? "Admin" : user?.role === "member" ? "Member" : "—";
+  const displayOrg = user?.orgName ?? (user?.role === "admin" ? "No org yet" : "");
+  const initials = user ? getInitials(user.name) : "?";
 
   return (
     <Sidebar className="border-r border-slate-100 bg-white/80 backdrop-blur-xl">
@@ -91,14 +101,9 @@ export function AppSidebar() {
                       : "hover:bg-slate-50 text-slate-500 hover:text-slate-900"
                   }`}
                 >
-                  <Link
-                    href={item.href}
-                    className="flex items-center justify-between w-full"
-                  >
+                  <Link href={item.href} className="flex items-center justify-between w-full">
                     <div className="flex items-center gap-3">
-                      <item.icon
-                        className={`size-5 ${pathname === item.href ? "stroke-[2.5px]" : "stroke-[1.5px]"}`}
-                      />
+                      <item.icon className={`size-5 ${pathname === item.href ? "stroke-[2.5px]" : "stroke-[1.5px]"}`} />
                       <span className="font-bold text-sm">{item.title}</span>
                     </div>
                     {item.badge && pathname !== item.href && (
@@ -129,16 +134,9 @@ export function AppSidebar() {
                       : "hover:bg-slate-50 text-slate-500 hover:text-slate-900"
                   }`}
                 >
-                  <Link
-                    href={item.href}
-                    className="flex items-center justify-between w-full"
-                  >
-                    <div className="flex items-center gap-3">
-                      <item.icon
-                        className={`size-5 ${pathname === item.href ? "stroke-[2.5px]" : "stroke-[1.5px]"}`}
-                      />
-                      <span className="font-bold text-sm">{item.title}</span>
-                    </div>
+                  <Link href={item.href} className="flex items-center gap-3 w-full">
+                    <item.icon className={`size-5 ${pathname === item.href ? "stroke-[2.5px]" : "stroke-[1.5px]"}`} />
+                    <span className="font-bold text-sm">{item.title}</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -155,17 +153,12 @@ export function AppSidebar() {
                 asChild
                 className="h-11 px-4 rounded-xl hover:bg-slate-50 text-slate-500 hover:text-slate-900 transition-all font-bold text-xs"
               >
-                <Link
-                  href={item.href}
-                  className="flex items-center justify-between w-full"
-                >
+                <Link href={item.href} className="flex items-center justify-between w-full">
                   <div className="flex items-center gap-3">
                     <item.icon className="size-4 stroke-[1.5px]" />
                     <span>{item.title}</span>
                   </div>
-                  {item.external && (
-                    <ExternalLink className="size-3 text-slate-300" />
-                  )}
+                  {item.external && <ExternalLink className="size-3 text-slate-300" />}
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -174,21 +167,39 @@ export function AppSidebar() {
 
         <SidebarSeparator className="mb-6 opacity-30" />
 
-        <div className="flex items-center gap-3 p-3 rounded-2xl bg-white border border-slate-100 shadow-sm hover:shadow-md transition-all cursor-pointer group/user">
-          <Avatar className="size-10 border-2 border-white ring-1 ring-slate-100 shadow-sm">
-            <AvatarImage src="https://github.com/shadcn.png" />
-            <AvatarFallback className="font-black text-xs">KB</AvatarFallback>
+        {/* User profile card */}
+        <button
+          onClick={() => router.push("/profile")}
+          className="w-full flex items-center gap-3 p-3 rounded-2xl bg-white border border-slate-100 shadow-sm hover:shadow-md transition-all cursor-pointer group/user text-left"
+        >
+          <Avatar className="size-10 border-2 border-white ring-1 ring-slate-100 shadow-sm shrink-0">
+            <AvatarFallback className={`font-black text-xs ${
+              loading ? "bg-slate-100 text-slate-400" :
+              user?.role === "admin" ? "bg-indigo-100 text-indigo-600" : "bg-purple-100 text-purple-600"
+            }`}>
+              {loading ? "…" : initials}
+            </AvatarFallback>
           </Avatar>
           <div className="flex flex-col flex-1 min-w-0">
             <span className="text-[11px] font-black text-[#1a1a1a] truncate">
-              Kaushik
+              {loading ? "Loading…" : displayName}
             </span>
-            <span className="text-[9px] font-bold text-slate-400 truncate uppercase tracking-tighter">
-              Developer
-            </span>
+            <div className="flex items-center gap-1.5">
+              <span className={`text-[9px] font-bold uppercase tracking-tighter ${
+                user?.role === "admin" ? "text-indigo-500" : "text-purple-500"
+              }`}>
+                {loading ? "—" : displayRole}
+              </span>
+              {displayOrg && (
+                <>
+                  <span className="text-[9px] text-slate-300">·</span>
+                  <span className="text-[9px] font-medium text-slate-400 truncate">{displayOrg}</span>
+                </>
+              )}
+            </div>
           </div>
-          <ChevronRight className="size-4 text-slate-300 group-hover/user:text-indigo-500 transition-colors" />
-        </div>
+          <UserCog className="size-4 text-slate-300 group-hover/user:text-indigo-500 transition-colors shrink-0" />
+        </button>
       </SidebarFooter>
     </Sidebar>
   );

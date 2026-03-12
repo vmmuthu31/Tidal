@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb, type UserRecord } from "@/lib/mongodb";
 
-// POST /api/users — create or update user after ZK login
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { suiAddress, googleSub, name, email } = body;
+    const { suiAddress, googleSub, name, email, role = "admin", orgAdminAddress } = body;
 
     if (!suiAddress || !googleSub || !name) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -13,11 +12,9 @@ export async function POST(req: NextRequest) {
 
     const db = await getDb();
     const users = db.collection<UserRecord>("users");
-
     const existing = await users.findOne({ googleSub });
 
     if (existing) {
-      // Returning user — update name/email if changed
       await users.updateOne(
         { googleSub },
         { $set: { name, email, suiAddress, updatedAt: new Date() } }
@@ -25,17 +22,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ user: { ...existing, name, email, suiAddress }, isNewUser: false });
     }
 
-    // New user
     const newUser: UserRecord = {
       suiAddress,
       googleSub,
       name,
       email,
+      role,
       hasOrg: false,
+      orgAdminAddress,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
-
     await users.insertOne(newUser);
     return NextResponse.json({ user: newUser, isNewUser: true }, { status: 201 });
   } catch (err: any) {
@@ -44,21 +41,14 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// GET /api/users?address=0x...
 export async function GET(req: NextRequest) {
   try {
     const address = req.nextUrl.searchParams.get("address");
-    if (!address) {
-      return NextResponse.json({ error: "Missing address" }, { status: 400 });
-    }
+    if (!address) return NextResponse.json({ error: "Missing address" }, { status: 400 });
 
     const db = await getDb();
-    const users = db.collection<UserRecord>("users");
-    const user = await users.findOne({ suiAddress: address });
-
-    if (!user) {
-      return NextResponse.json({ user: null }, { status: 404 });
-    }
+    const user = await db.collection<UserRecord>("users").findOne({ suiAddress: address });
+    if (!user) return NextResponse.json({ user: null }, { status: 404 });
 
     return NextResponse.json({ user });
   } catch (err: any) {
@@ -67,23 +57,19 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// PATCH /api/users — mark user as having an org
 export async function PATCH(req: NextRequest) {
   try {
     const body = await req.json();
-    const { suiAddress, hasOrg } = body;
-
-    if (!suiAddress) {
-      return NextResponse.json({ error: "Missing suiAddress" }, { status: 400 });
-    }
+    const { suiAddress, hasOrg, orgName, name } = body;
+    if (!suiAddress) return NextResponse.json({ error: "Missing suiAddress" }, { status: 400 });
 
     const db = await getDb();
-    const users = db.collection<UserRecord>("users");
-    await users.updateOne(
-      { suiAddress },
-      { $set: { hasOrg: !!hasOrg, updatedAt: new Date() } }
-    );
+    const update: Partial<UserRecord> & { updatedAt: Date } = { updatedAt: new Date() };
+    if (hasOrg !== undefined) update.hasOrg = !!hasOrg;
+    if (orgName !== undefined) update.orgName = orgName;
+    if (name !== undefined) update.name = name;
 
+    await db.collection<UserRecord>("users").updateOne({ suiAddress }, { $set: update });
     return NextResponse.json({ success: true });
   } catch (err: any) {
     console.error("[PATCH /api/users]", err);

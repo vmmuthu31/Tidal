@@ -102,7 +102,7 @@ export default function OnboardingPage() {
       await fetch("/api/users", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ suiAddress: activeAddress, hasOrg: true }),
+        body: JSON.stringify({ suiAddress: activeAddress, hasOrg: true, orgName }),
       });
 
       toast.success("Organization created!", {

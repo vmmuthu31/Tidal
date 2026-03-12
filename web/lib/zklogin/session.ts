@@ -10,6 +10,7 @@ export interface ZkLoginSessionData {
     nonce: string;
     userSalt?: string;
     pendingUserName?: string;
+    inviteToken?: string;   // set when user arrives from an invite link
 }
 
 export interface CachedProofData {

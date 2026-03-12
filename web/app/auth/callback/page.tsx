@@ -78,28 +78,69 @@ export default function AuthCallbackPage() {
         setStatusText("Saving your profile…");
         const userName = session.pendingUserName || decodedJWT.name || "User";
         const userEmail = decodedJWT.email || "";
+        const inviteToken = session.inviteToken;
 
         let isNewUser = true;
         let hasOrg = false;
-        try {
-          const res = await fetch("/api/users", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              suiAddress: address,
-              googleSub: decodedJWT.sub,
-              name: userName,
-              email: userEmail,
-            }),
-          });
-          if (res.ok) {
-            const data = await res.json();
-            isNewUser = data.isNewUser ?? true;
-            hasOrg = data.user?.hasOrg ?? false;
+        let role: "admin" | "member" = "admin";
+        let orgAdminAddress: string | undefined;
+
+        // --- Employee invite path ---
+        if (inviteToken) {
+          try {
+            // Validate invite and get org details
+            const inviteRes = await fetch(`/api/invites/${inviteToken}`);
+            if (inviteRes.ok) {
+              const { invite } = await inviteRes.json();
+              role = "member";
+              orgAdminAddress = invite.adminAddress;
+
+              // Create member user
+              const userRes = await fetch("/api/users", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  suiAddress: address,
+                  googleSub: decodedJWT.sub,
+                  name: userName,
+                  email: userEmail,
+                  role: "member",
+                  orgAdminAddress: invite.adminAddress,
+                }),
+              });
+              if (userRes.ok) {
+                const data = await userRes.json();
+                isNewUser = data.isNewUser ?? true;
+              }
+
+              // Mark invite as accepted
+              await fetch(`/api/invites/${inviteToken}`, { method: "PATCH" });
+            }
+          } catch {
+            console.warn("Could not process invite; continuing as member.");
           }
-        } catch {
-          // MongoDB unreachable — still proceed, the ZK proof is valid
-          console.warn("Could not save user to DB; continuing with onboarding.");
+        } else {
+          // --- Admin / direct signup path ---
+          try {
+            const res = await fetch("/api/users", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                suiAddress: address,
+                googleSub: decodedJWT.sub,
+                name: userName,
+                email: userEmail,
+                role: "admin",
+              }),
+            });
+            if (res.ok) {
+              const data = await res.json();
+              isNewUser = data.isNewUser ?? true;
+              hasOrg = data.user?.hasOrg ?? false;
+            }
+          } catch {
+            console.warn("Could not save user to DB; continuing with onboarding.");
+          }
         }
 
         // 7. Clean up ephemeral session
@@ -108,8 +149,12 @@ export default function AuthCallbackPage() {
 
         setStatus("success");
 
-        // New user or no org → onboarding; returning user with org → dashboard
-        const destination = (isNewUser || !hasOrg) ? "/onboarding" : "/dashboard";
+        // Members go straight to dashboard (no org creation needed)
+        // New admins go to onboarding; returning admins with org go to dashboard
+        let destination = "/dashboard";
+        if (role === "admin" && (isNewUser || !hasOrg)) {
+          destination = "/onboarding";
+        }
         setTimeout(() => router.replace(destination), 1200);
       } catch (err: any) {
         setStatus("error");

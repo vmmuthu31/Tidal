@@ -10,7 +10,11 @@
       "WebFetch(domain:docs.suins.io)",
       "WebFetch(domain:www.npmjs.com)",
       "Bash(cd /Users/kaushikk/Documents/Products/Sui-CRM/Sui-CRM/web && npm install mongodb --legacy-peer-deps 2>&1 | tail -5)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(npm install:*)",
+      "Bash(cat /Users/kaushikk/Documents/Products/Sui-CRM/Sui-CRM/web/app/\\\\\\(dashboard\\\\\\)/organization/team/page.tsx | head -3)",
+      "WebFetch(domain:resend.com)",
+      "WebFetch(domain:postmarkapp.com)"
     ]
   }
 }
