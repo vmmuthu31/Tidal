@@ -6,6 +6,7 @@ import { SuiJsonRpcClient } from "@mysten/sui/jsonRpc";
 import { toBase64, fromBase64 } from "@mysten/sui/utils";
 import { SessionManager } from "@/lib/zklogin/session";
 import { ZkLoginService } from "@/lib/zklogin/zklogin";
+import { CRM_SPONSORED_TARGETS } from "@/lib/config/contracts";
 
 interface SponsorState {
   isSponsoring: boolean;
@@ -30,7 +31,9 @@ interface SponsorState {
  *     console.log("tx digest:", digest);
  *   };
  */
-export function useSponsoredTransaction() {
+export function useSponsoredTransaction(
+  injectedProof?: ReturnType<typeof SessionManager.getProof>
+) {
   const [state, setState] = useState<SponsorState>({
     isSponsoring: false,
     error: null,
@@ -48,7 +51,7 @@ export function useSponsoredTransaction() {
 
       try {
         // Load the proof the callback page saved to localStorage
-        const proof = SessionManager.getProof();
+        const proof = injectedProof ?? SessionManager.getProof();
         if (!proof) {
           throw new Error("Not authenticated. Please log in via zkLogin first.");
         }
@@ -72,7 +75,7 @@ export function useSponsoredTransaction() {
           body: JSON.stringify({
             transactionKindBytes: txKindBytesB64,
             sender: proof.address,
-            allowedMoveCallTargets: options?.allowedMoveCallTargets,
+            allowedMoveCallTargets: options?.allowedMoveCallTargets ?? CRM_SPONSORED_TARGETS,
             allowedAddresses: options?.allowedAddresses,
           }),
         });
@@ -119,7 +122,7 @@ export function useSponsoredTransaction() {
         throw err;
       }
     },
-    []
+    [injectedProof]
   );
 
   return {

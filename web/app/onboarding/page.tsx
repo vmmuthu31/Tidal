@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Transaction } from "@mysten/sui/transactions";
-import { useUnifiedAccount, useUnifiedSignAndExecuteTransaction } from "@/hooks/useUnifiedAuth";
+import { useUnifiedAccount, useUnifiedTransaction } from "@/hooks/useUnifiedAuth";
 import { SessionManager } from "@/lib/zklogin/session";
 import { useSuiClientQuery } from "@mysten/dapp-kit";
 import CONTRACT_CONFIG, { buildExplorerUrl } from "@/lib/config/contracts";
@@ -31,7 +31,7 @@ function formatSui(mist: string) {
 export default function OnboardingPage() {
   const router = useRouter();
   const { address } = useUnifiedAccount();
-  const { signAndExecuteTransaction } = useUnifiedSignAndExecuteTransaction();
+  const { execute: signAndExecuteTransaction } = useUnifiedTransaction();
 
   const [step, setStep] = useState<1 | 2>(1);
   const [copied, setCopied] = useState(false);

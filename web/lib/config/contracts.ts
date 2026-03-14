@@ -137,6 +137,29 @@ export const CONTRACT_FUNCTIONS = {
 } as const;
 
 // =============================================================================
+// ENOKI SPONSORSHIP — Whitelisted CRM move call targets
+// =============================================================================
+
+/**
+ * All CRM user-facing move call targets permitted in sponsored transactions.
+ * Add every entry here to the Enoki portal's "Allowed Move Call Targets" list.
+ * seal_approve is intentionally excluded (called by Seal nodes, not users).
+ */
+export const CRM_SPONSORED_TARGETS: string[] = [
+  CONTRACT_FUNCTIONS.ORG.CREATE_ORG,
+  CONTRACT_FUNCTIONS.ACCESS_CONTROL.CREATE_ORG_REGISTRY,
+  CONTRACT_FUNCTIONS.ACCESS_CONTROL.CREATE_ORG_AND_REGISTRY,
+  CONTRACT_FUNCTIONS.ACCESS_CONTROL.ADD_ORG_MEMBER,
+  CONTRACT_FUNCTIONS.ACCESS_CONTROL.UPDATE_MEMBER_ROLE,
+  CONTRACT_FUNCTIONS.ACCESS_CONTROL.REMOVE_ORG_MEMBER,
+  CONTRACT_FUNCTIONS.ACCESS_CONTROL.REGISTER_PROFILE,
+  CONTRACT_FUNCTIONS.ACCESS_CONTROL.CREATE_AND_REGISTER_PROFILE,
+  CONTRACT_FUNCTIONS.ACCESS_CONTROL.CREATE_ENCRYPTED_RESOURCE,
+  CONTRACT_FUNCTIONS.PROFILE.CREATE_PROFILE,
+  CONTRACT_FUNCTIONS.INTERACTION.LOG_INTERACTION,
+];
+
+// =============================================================================
 // EVENT TYPES - Contract event identifiers
 // =============================================================================
 
@@ -201,6 +224,7 @@ export const CONTRACT_CONFIG = {
   ROLES: CRM_ROLES,
   RESOURCE_TYPES,
   GAS: GAS_CONFIG,
+  SPONSORED_TARGETS: CRM_SPONSORED_TARGETS,
 } as const;
 
 export default CONTRACT_CONFIG;

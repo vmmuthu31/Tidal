@@ -6,6 +6,8 @@ import { Transaction } from "@mysten/sui/transactions";
 import { SessionManager } from "@/lib/zklogin/session";
 import { ZkLoginService } from "@/lib/zklogin/zklogin";
 import { getSuiClient } from "@/lib/config/sui";
+import { useSponsoredTransaction } from "@/hooks/useSponsoredTransaction";
+import { CRM_SPONSORED_TARGETS } from "@/lib/config/contracts";
 
 export type AuthMode = "wallet" | "zk" | null;
 
@@ -123,4 +125,54 @@ export function useUnifiedSignAndExecuteTransaction(): {
   );
 
   return { signAndExecuteTransaction };
+}
+
+/**
+ * useUnifiedTransaction — primary CRM transaction hook.
+ * wallet  → dapp-kit direct execution (user pays gas)
+ * zkLogin → Enoki sponsored execution (org pays gas)
+ *
+ * Drop-in for useUnifiedSignAndExecuteTransaction when gas sponsorship is desired.
+ */
+export function useUnifiedTransaction(options?: {
+  allowedMoveCallTargets?: string[];
+}): {
+  execute: (params: { transaction: Transaction }) => Promise<{ digest: string }>;
+  isPending: boolean;
+  error: string | null;
+} {
+  const { address, authMode } = useUnifiedAccount();
+  const dappSignAndExecute = useSignAndExecuteTransaction().mutateAsync;
+
+  const [zkProof] = useState(() =>
+    typeof window !== "undefined" ? SessionManager.getProof() : null
+  );
+
+  const { sponsorAndExecute, isSponsoring, error } = useSponsoredTransaction(
+    authMode === "zk" ? zkProof : undefined
+  );
+
+  const execute = useCallback(
+    async (params: { transaction: Transaction }): Promise<{ digest: string }> => {
+      const { transaction: tx } = params;
+
+      if (authMode === "wallet") {
+        const result = await dappSignAndExecute({ transaction: tx });
+        return { digest: result.digest };
+      }
+
+      if (authMode === "zk") {
+        if (!zkProof) throw new Error("Not authenticated. Please sign in with ZK Login first.");
+        const digest = await sponsorAndExecute(tx, {
+          allowedMoveCallTargets: options?.allowedMoveCallTargets ?? CRM_SPONSORED_TARGETS,
+        });
+        return { digest };
+      }
+
+      throw new Error("No active account. Connect a wallet or sign in with ZK Login.");
+    },
+    [authMode, address, dappSignAndExecute, sponsorAndExecute, zkProof, options?.allowedMoveCallTargets]
+  );
+
+  return { execute, isPending: isSponsoring, error };
 }
