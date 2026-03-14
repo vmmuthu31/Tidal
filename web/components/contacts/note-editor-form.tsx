@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useSuiClient } from "@mysten/dapp-kit";
 import { Transaction } from "@mysten/sui/transactions";
-import { useUnifiedAccount, useUnifiedSignAndExecuteTransaction } from "@/hooks/useUnifiedAuth";
+import { useUnifiedAccount, useUnifiedTransaction } from "@/hooks/useUnifiedAuth";
 import CONTRACT_CONFIG, { buildExplorerUrl } from "@/lib/config/contracts";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -33,7 +33,7 @@ export function NoteEditorForm({
 }: NoteEditorFormProps) {
   const { address } = useUnifiedAccount();
   const client = useSuiClient();
-  const { signAndExecuteTransaction } = useUnifiedSignAndExecuteTransaction();
+  const { execute: signAndExecuteTransaction } = useUnifiedTransaction();
 
   const [content, setContent] = useState("");
   const [accessLevel, setAccessLevel] = useState<OrgRole>(3);
@@ -103,6 +103,23 @@ export function NoteEditorForm({
       const resourceObjectId = createdObj
         ? (createdObj as { objectId: string }).objectId
         : null;
+
+      // Save note metadata to MongoDB so it can be listed without a chain indexer
+      if (resourceObjectId) {
+        await fetch("/api/notes", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contactId: profileId,
+            adminAddress: address,
+            blobId: result.blobId,
+            encryptionId: result.encryptionId,
+            resourceObjectId,
+            accessLevel,
+            txDigest: res.digest,
+          }),
+        });
+      }
 
       setContent("");
       onSuccess?.();

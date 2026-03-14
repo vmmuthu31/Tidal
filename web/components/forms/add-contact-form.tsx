@@ -3,7 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Transaction } from "@mysten/sui/transactions";
-import { useUnifiedAccount, useUnifiedSignAndExecuteTransaction } from "@/hooks/useUnifiedAuth";
+import { useUnifiedAccount, useUnifiedTransaction } from "@/hooks/useUnifiedAuth";
+import { useUser } from "@/hooks/useUser";
+import { useSuiClient } from "@mysten/dapp-kit";
 import CONTRACT_CONFIG, { buildExplorerUrl } from "@/lib/config/contracts";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -15,17 +17,18 @@ import { CheckCircle2, Loader2, AlertCircle } from "lucide-react";
 export function AddContactForm() {
   const router = useRouter();
   const { address } = useUnifiedAccount();
-  const { signAndExecuteTransaction } = useUnifiedSignAndExecuteTransaction();
+  const { user } = useUser();
+  const { execute: signAndExecuteTransaction } = useUnifiedTransaction();
+  const suiClient = useSuiClient();
 
-  // Raw input (can be "0x…" address or "alice.sui" name)
+  const [name, setName] = useState("");
   const [walletInput, setWalletInput] = useState("");
   const { resolvedAddress, suiName, resolving, inputError } = useSuiNSInput(walletInput);
   const [twitter, setTwitter] = useState("");
+  const [email, setEmail] = useState("");
+  const [company, setCompany] = useState("");
 
-  // Organization state fields
-  const [orgId, setOrgId] = useState("");
-  const [profileRegistryId, setProfileRegistryId] = useState<string>(CONTRACT_CONFIG.SHARED_OBJECTS.PROFILE_REGISTRY || "");
-  const [uniqueTag, setUniqueTag] = useState("CONTACT_001");
+  const [profileRegistryId] = useState<string>(CONTRACT_CONFIG.SHARED_OBJECTS.PROFILE_REGISTRY || "");
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -36,9 +39,13 @@ export function AddContactForm() {
       setError("Connect your wallet or sign in with ZK Login first");
       return;
     }
+    if (!name.trim()) {
+      setError("Contact name is required");
+      return;
+    }
     const finalAddress = resolvedAddress ?? walletInput.trim();
-    if (!finalAddress || !orgId.trim()) {
-      setError("Organization ID and Wallet address are required");
+    if (!finalAddress) {
+      setError("Wallet address or .sui name is required");
       return;
     }
     if (inputError) {
@@ -49,43 +56,66 @@ export function AddContactForm() {
     setLoading(true);
     setError(null);
     try {
-      // Phase 3 placeholder: hardcoded for blob_id and encryption_id.
-      // Evolving logic here to actually hook into "Walrus" & "Seal" will replace these buffers.
-      const tx = new Transaction();
-
+      // Generate a unique tag from name + timestamp
+      const tag = `${name.trim().toUpperCase().replace(/\s+/g, "_")}_${Date.now().toString(36).toUpperCase()}`;
       const blobBytes = new TextEncoder().encode("mock_blob_123");
       const encBytes = new TextEncoder().encode("mock_enc_123");
 
+      const tx = new Transaction();
       tx.moveCall({
         target: CONTRACT_CONFIG.FUNCTIONS.ACCESS_CONTROL.CREATE_AND_REGISTER_PROFILE,
         arguments: [
           tx.object(profileRegistryId.trim()),
-          tx.pure.address(orgId.trim()),       // Org ID
+          tx.pure.address(address),             // org ID = admin address for now
           tx.pure.address(finalAddress),
-          tx.pure.string(uniqueTag.trim()),
-          tx.pure.vector('u8', blobBytes),     // blob_id as vector
-          tx.pure.vector('u8', encBytes),      // encryption_id as vector
+          tx.pure.string(tag),
+          tx.pure.vector("u8", blobBytes),
+          tx.pure.vector("u8", encBytes),
         ],
       });
 
       const res = await signAndExecuteTransaction({ transaction: tx });
 
-      toast.success("Contact Saved!", {
-        description: `Profile ${uniqueTag} created securely.`,
+      // Capture on-chain profile object ID (needed later for interactions)
+      let onchainObjectId: string | undefined;
+      try {
+        const txResult = await suiClient.waitForTransaction({
+          digest: res.digest,
+          options: { showObjectChanges: true },
+        });
+        const created = txResult.objectChanges?.find(
+          (c: any) => c.type === "created" && (c.objectType?.includes("Profile") || c.objectType?.includes("profile"))
+        ) as any;
+        onchainObjectId = created?.objectId;
+      } catch { /* non-fatal */ }
+
+      // Save contact to MongoDB for listing
+      await fetch("/api/contacts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          adminAddress: address,
+          orgName: user?.orgName ?? "",
+          name: name.trim(),
+          walletAddress: finalAddress,
+          tag,
+          twitter: twitter.trim() || undefined,
+          email: email.trim() || undefined,
+          company: company.trim() || undefined,
+          onchainTxDigest: res.digest,
+          onchainObjectId,
+        }),
+      });
+
+      toast.success("Contact saved!", {
+        description: `${name} added to your organization.`,
         action: {
           label: "View Tx",
           onClick: () => window.open(buildExplorerUrl(res.digest, "tx"), "_blank"),
         },
       });
 
-      console.log("Add contact successful", { address: finalAddress, suiName, twitter });
-      // Clear out the form to prevent double submits 
-      setWalletInput("");
-      setTwitter("");
-      setOrgId("");
-      setUniqueTag("CONTACT_001");
-
-      router.push("/dashboard");
+      router.push("/contacts");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to create contact");
     } finally {
@@ -96,27 +126,19 @@ export function AddContactForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="registry-id">Profile Registry ID</Label>
+        <Label htmlFor="contact-name">Full Name *</Label>
         <Input
-          id="registry-id"
-          value={profileRegistryId}
-          onChange={(e) => setProfileRegistryId(e.target.value)}
-          placeholder="0x..."
+          id="contact-name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="e.g. Alice Chen"
+          required
           disabled={loading || !address}
         />
       </div>
+
       <div className="space-y-2">
-        <Label htmlFor="org-id">Organization ID</Label>
-        <Input
-          id="org-id"
-          value={orgId}
-          onChange={(e) => setOrgId(e.target.value)}
-          placeholder="0x…"
-          disabled={loading || !address}
-        />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="contact-wallet">Wallet address or .sui name</Label>
+        <Label htmlFor="contact-wallet">Wallet address or .sui name *</Label>
         <div className="relative">
           <Input
             id="contact-wallet"
@@ -126,14 +148,12 @@ export function AddContactForm() {
             disabled={loading || !address}
             className={inputError ? "border-red-300 focus-visible:ring-red-200" : suiName ? "border-emerald-300 focus-visible:ring-emerald-100" : ""}
           />
-          {/* Resolution status indicator */}
           <div className="absolute right-3 top-1/2 -translate-y-1/2">
             {resolving && <Loader2 className="size-4 text-slate-400 animate-spin" />}
             {!resolving && suiName && <CheckCircle2 className="size-4 text-emerald-500" />}
             {!resolving && inputError && <AlertCircle className="size-4 text-red-400" />}
           </div>
         </div>
-        {/* Show resolved address when a .sui name is typed */}
         {suiName && resolvedAddress && (
           <p className="text-xs text-emerald-600 font-medium flex items-center gap-1.5 mt-1">
             <CheckCircle2 className="size-3.5" />
@@ -148,16 +168,30 @@ export function AddContactForm() {
           </p>
         )}
       </div>
+
       <div className="space-y-2">
-        <Label htmlFor="unique-tag">Unique Tag</Label>
+        <Label htmlFor="contact-email">Email (optional)</Label>
         <Input
-          id="unique-tag"
-          value={uniqueTag}
-          onChange={(e) => setUniqueTag(e.target.value)}
-          placeholder="e.g. CONTACT_001"
-          disabled={loading || !address}
+          id="contact-email"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="alice@example.com"
+          disabled={loading}
         />
       </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="contact-company">Company (optional)</Label>
+        <Input
+          id="contact-company"
+          value={company}
+          onChange={(e) => setCompany(e.target.value)}
+          placeholder="e.g. Acme Corp"
+          disabled={loading}
+        />
+      </div>
+
       <div className="space-y-2">
         <Label htmlFor="contact-twitter">Twitter (optional)</Label>
         <Input
@@ -168,9 +202,15 @@ export function AddContactForm() {
           disabled={loading}
         />
       </div>
+
       {error && <p className="text-sm text-destructive">{error}</p>}
-      <Button type="submit" disabled={loading || !address}>
-        {loading ? "Creating…" : "Create Contact"}
+
+      <Button type="submit" disabled={loading || !address || !name.trim()} className="w-full h-12 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold">
+        {loading ? (
+          <><Loader2 className="size-4 mr-2 animate-spin" />Creating on-chain…</>
+        ) : (
+          "Create Contact"
+        )}
       </Button>
     </form>
   );

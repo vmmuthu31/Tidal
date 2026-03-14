@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Transaction } from "@mysten/sui/transactions";
-import { useUnifiedAccount, useUnifiedSignAndExecuteTransaction } from "@/hooks/useUnifiedAuth";
+import { useUnifiedAccount, useUnifiedTransaction } from "@/hooks/useUnifiedAuth";
 import CONTRACT_CONFIG, { buildExplorerUrl } from "@/lib/config/contracts";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -17,7 +17,7 @@ export function CreateOrganizationForm({
   onSuccess,
 }: CreateOrganizationFormProps) {
   const { address } = useUnifiedAccount();
-  const { signAndExecuteTransaction } = useUnifiedSignAndExecuteTransaction();
+  const { execute: signAndExecuteTransaction } = useUnifiedTransaction();
   const [orgName, setOrgName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

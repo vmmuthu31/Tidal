@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Transaction } from "@mysten/sui/transactions";
 import {
   useUnifiedAccount,
-  useUnifiedSignAndExecuteTransaction,
+  useUnifiedTransaction,
 } from "@/hooks/useUnifiedAuth";
 import CONTRACT_CONFIG, { buildExplorerUrl } from "@/lib/config/contracts";
 import { toast } from "sonner";
@@ -22,7 +22,7 @@ import { ROLE_LABELS, type OrgRole } from "@/lib/types/crm";
 
 export function AddMemberForm() {
   const { address } = useUnifiedAccount();
-  const { signAndExecuteTransaction } = useUnifiedSignAndExecuteTransaction();
+  const { execute: signAndExecuteTransaction } = useUnifiedTransaction();
   const [registryId, setRegistryId] = useState<string>(
     CONTRACT_CONFIG.SHARED_OBJECTS.EXAMPLE_ORG_REGISTRY || "",
   );

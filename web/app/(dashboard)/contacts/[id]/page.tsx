@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft, User } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ArrowLeft, User, Building2, Mail, Twitter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProfileOverview } from "@/components/contacts/profile-overview";
@@ -14,6 +15,14 @@ import { ProfileOnchain } from "@/components/contacts/profile-onchain";
 export default function ContactProfilePage() {
   const params = useParams();
   const id = params.id as string;
+  const [contact, setContact] = useState<any>(null);
+
+  useEffect(() => {
+    fetch(`/api/contacts/${id}`)
+      .then((r) => r.json())
+      .then((d) => setContact(d.contact ?? null))
+      .catch(() => setContact(null));
+  }, [id]);
 
   return (
     <div className="max-w-[1000px] mx-auto space-y-8 pb-16">
@@ -33,15 +42,36 @@ export default function ContactProfilePage() {
           </Button>
           <div className="flex items-center gap-3 min-w-0">
             <div className="size-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600 shrink-0">
-              <User className="size-6" />
+              {contact?.name ? (
+                <span className="text-lg font-black">{contact.name.charAt(0).toUpperCase()}</span>
+              ) : (
+                <User className="size-6" />
+              )}
             </div>
             <div className="min-w-0">
               <h1 className="text-xl sm:text-2xl font-black tracking-tight text-[#1a1a1a] truncate">
-                Contact profile
+                {contact?.name ?? "Contact profile"}
               </h1>
-              <p className="font-mono text-xs sm:text-sm text-slate-500 truncate mt-0.5">
-                {id}
-              </p>
+              <div className="flex items-center gap-3 mt-0.5 flex-wrap">
+                {contact?.company && (
+                  <span className="text-xs text-slate-500 flex items-center gap-1">
+                    <Building2 className="size-3" />{contact.company}
+                  </span>
+                )}
+                {contact?.email && (
+                  <span className="text-xs text-slate-500 flex items-center gap-1">
+                    <Mail className="size-3" />{contact.email}
+                  </span>
+                )}
+                {contact?.twitter && (
+                  <span className="text-xs text-slate-500 flex items-center gap-1">
+                    <Twitter className="size-3" />{contact.twitter}
+                  </span>
+                )}
+                {!contact?.name && (
+                  <p className="font-mono text-xs text-slate-500 truncate">{id}</p>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -82,19 +112,19 @@ export default function ContactProfilePage() {
           </TabsTrigger>
         </TabsList>
         <TabsContent value="overview" className="mt-6">
-          <ProfileOverview profileId={id} />
+          <ProfileOverview profileId={id} contact={contact} />
         </TabsContent>
         <TabsContent value="notes" className="mt-6">
           <ProfileNotes profileId={id} />
         </TabsContent>
         <TabsContent value="files" className="mt-6">
-          <ProfileFiles profileId={id} />
+          <ProfileFiles profileId={id} onchainObjectId={contact?.onchainObjectId} />
         </TabsContent>
         <TabsContent value="interactions" className="mt-6">
-          <ProfileInteractions profileId={id} />
+          <ProfileInteractions profileId={id} onchainObjectId={contact?.onchainObjectId} />
         </TabsContent>
         <TabsContent value="onchain" className="mt-6">
-          <ProfileOnchain profileId={id} />
+          <ProfileOnchain profileId={id} contact={contact} />
         </TabsContent>
       </Tabs>
     </div>

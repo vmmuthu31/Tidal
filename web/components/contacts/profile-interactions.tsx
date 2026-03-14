@@ -10,7 +10,7 @@ import {
   Send,
 } from "lucide-react";
 import { Transaction } from "@mysten/sui/transactions";
-import { useUnifiedAccount, useUnifiedSignAndExecuteTransaction } from "@/hooks/useUnifiedAuth";
+import { useUnifiedAccount, useUnifiedTransaction } from "@/hooks/useUnifiedAuth";
 import { toast } from "sonner";
 import CONTRACT_CONFIG from "@/lib/config/contracts";
 import { Button } from "@/components/ui/button";
@@ -78,7 +78,7 @@ function formatDate(iso: string) {
 
 export function ProfileInteractions({ profileId }: ProfileInteractionsProps) {
   const { address } = useUnifiedAccount();
-  const { signAndExecuteTransaction } = useUnifiedSignAndExecuteTransaction();
+  const { execute: signAndExecuteTransaction } = useUnifiedTransaction();
   const [type, setType] = useState("message");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);

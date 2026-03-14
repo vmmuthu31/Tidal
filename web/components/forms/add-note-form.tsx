@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Transaction } from "@mysten/sui/transactions";
-import { useUnifiedAccount, useUnifiedSignAndExecuteTransaction } from "@/hooks/useUnifiedAuth";
+import { useUnifiedAccount, useUnifiedTransaction } from "@/hooks/useUnifiedAuth";
 import CONTRACT_CONFIG, { buildExplorerUrl } from "@/lib/config/contracts";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 
 export function AddNoteForm() {
     const { address } = useUnifiedAccount();
-    const { signAndExecuteTransaction } = useUnifiedSignAndExecuteTransaction();
+    const { execute: signAndExecuteTransaction } = useUnifiedTransaction();
 
     // Reference Fields
     const [profileId, setProfileId] = useState("");

@@ -1,11 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getDb, type NoteRecord } from "@/lib/mongodb";
+import CONTRACT_CONFIG from "@/lib/config/contracts";
 
-/**
- * GET /api/profiles/[id]/notes
- *
- * Returns encrypted note metadata for a profile. When the Sui indexer is wired,
- * this will query objects owned by the profile; for now returns an empty list.
- */
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -16,22 +12,29 @@ export async function GET(
       return NextResponse.json({ error: "Profile ID required" }, { status: 400 });
     }
 
-    // TODO: Query Sui RPC or Postgres indexer for EncryptedResource objects
-    // owned by or linked to this profile (resource_type: NOTE). Map to ResourceMetadata.
-    const notes: Array<{
-      resource_id: string;
-      profile_id: string;
-      org_id: string;
-      resource_type: "note";
-      blob_id: string;
-      encryption_id: string;
-      access_level: number;
-      file_name?: string;
-      created_at: string;
-      created_by: string;
-      walrus_url: string;
-      sui_explorer_url: string;
-    }> = [];
+    const db = await getDb();
+    const rawNotes = await db
+      .collection<NoteRecord>("notes")
+      .find({ contactId: profileId })
+      .sort({ createdAt: -1 })
+      .toArray();
+
+    // Map to ResourceMetadata shape expected by ProfileNotes component
+    const notes = rawNotes.map((n) => ({
+      resource_id: n.resourceObjectId,
+      profile_id: n.contactId,
+      org_id: CONTRACT_CONFIG.SHARED_OBJECTS.EXAMPLE_ORG_REGISTRY,
+      resource_type: "note" as const,
+      blob_id: n.blobId,
+      encryption_id: n.encryptionId,
+      access_level: n.accessLevel,
+      created_at: n.createdAt.toISOString(),
+      created_by: n.adminAddress,
+      walrus_url: "",
+      sui_explorer_url: n.txDigest
+        ? `https://suiscan.xyz/testnet/tx/${n.txDigest}`
+        : "",
+    }));
 
     return NextResponse.json(notes);
   } catch (err: unknown) {

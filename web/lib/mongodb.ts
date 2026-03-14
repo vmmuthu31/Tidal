@@ -48,3 +48,55 @@ export interface InviteRecord {
   expiresAt: Date;
   createdAt: Date;
 }
+
+export interface ContactRecord {
+  _id?: string;
+  adminAddress: string;       // org admin who owns this contact
+  orgName: string;
+  name: string;               // display name
+  walletAddress: string;      // contact's Sui address
+  tag: string;                // unique tag (e.g. CONTACT_001)
+  twitter?: string;
+  email?: string;
+  company?: string;
+  notes?: string;
+  onchainTxDigest?: string;   // Sui tx digest of profile creation
+  onchainObjectId?: string;   // profile object ID on-chain
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface NoteRecord {
+  _id?: string;
+  contactId: string;          // MongoDB contact _id
+  adminAddress: string;
+  blobId: string;
+  encryptionId: string;
+  resourceObjectId: string;
+  accessLevel: number;
+  txDigest: string;
+  createdAt: Date;
+}
+
+export interface FileRecord {
+  _id?: string;
+  contactId: string;
+  adminAddress: string;
+  filename: string;
+  blobId: string;
+  encryptionId: string;
+  resourceObjectId: string;
+  accessLevel: number;
+  txDigest: string;
+  createdAt: Date;
+}
+
+export interface InteractionRecord {
+  _id?: string;
+  contactId: string;
+  adminAddress: string;
+  type: string;               // message | call | meeting | other
+  message: string;
+  txDigest: string;
+  createdAt: Date;
+}

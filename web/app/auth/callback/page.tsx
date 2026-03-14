@@ -117,6 +117,16 @@ export default function AuthCallbackPage() {
               if (userRes.ok) {
                 const data = await userRes.json();
                 isNewUser = data.isNewUser ?? true;
+                // Stamp org membership onto member record
+                await fetch("/api/users", {
+                  method: "PATCH",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    suiAddress: address,
+                    hasOrg: true,
+                    orgName: invite.orgName,
+                  }),
+                });
               }
 
               // Mark invite as accepted
