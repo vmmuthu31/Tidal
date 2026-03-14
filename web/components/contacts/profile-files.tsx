@@ -92,7 +92,7 @@ export function ProfileFiles({ profileId, onchainObjectId }: ProfileFilesProps) 
       const cleanEncId = result.encryptionId.startsWith("0x")
         ? result.encryptionId.slice(2)
         : result.encryptionId;
-      tx.moveCall({
+      const [resourceObj] = tx.moveCall({
         target: CONTRACT_CONFIG.FUNCTIONS.ACCESS_CONTROL.CREATE_ENCRYPTED_RESOURCE,
         arguments: [
           tx.pure.address(address),
@@ -104,6 +104,7 @@ export function ProfileFiles({ profileId, onchainObjectId }: ProfileFilesProps) 
           tx.pure.u64(Date.now()),
         ],
       });
+      tx.transferObjects([resourceObj], tx.pure.address(address));
 
       const res = await signAndExecuteTransaction({ transaction: tx });
 

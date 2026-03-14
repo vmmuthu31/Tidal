@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useCurrentAccount, useSignAndExecuteTransaction } from "@mysten/dapp-kit";
+import { useCurrentAccount, useSignAndExecuteTransaction, useSignPersonalMessage } from "@mysten/dapp-kit";
 import { Transaction } from "@mysten/sui/transactions";
 import { SessionManager } from "@/lib/zklogin/session";
 import { ZkLoginService } from "@/lib/zklogin/zklogin";

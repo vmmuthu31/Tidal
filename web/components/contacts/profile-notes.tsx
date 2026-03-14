@@ -12,7 +12,8 @@ import {
   Check,
   ShieldCheck,
 } from "lucide-react";
-import { useCurrentAccount, useSignPersonalMessage } from "@mysten/dapp-kit";
+import { useSignPersonalMessage } from "@mysten/dapp-kit";
+import { useUnifiedAccount } from "@/hooks/useUnifiedAuth";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -78,7 +79,7 @@ export function ProfileNotes({ profileId }: ProfileNotesProps) {
   const [devEncId, setDevEncId] = useState("");
   const [devResId, setDevResId] = useState("");
 
-  const currentAccount = useCurrentAccount();
+  const { address: currentAddress } = useUnifiedAccount();
   const { mutateAsync: signPersonalMessage } = useSignPersonalMessage();
 
   const orgRegistryId = CONTRACT_CONFIG.SHARED_OBJECTS.EXAMPLE_ORG_REGISTRY;
@@ -113,8 +114,8 @@ export function ProfileNotes({ profileId }: ProfileNotesProps) {
 
   const runDecrypt = useCallback(
     async (resource: ResourceMetadata) => {
-      if (!currentAccount) {
-        toast.error("Connect your Sui wallet to decrypt.");
+      if (!currentAddress) {
+        toast.error("Sign in with Google or connect your wallet to decrypt.");
         return;
       }
       setDecryptTarget(resource);
@@ -125,7 +126,7 @@ export function ProfileNotes({ profileId }: ProfileNotesProps) {
 
       try {
         const sessionKey = await crmDecryptionService.createSessionKey(
-          currentAccount.address
+          currentAddress
         );
         setDecryptStep("sign");
 
@@ -160,7 +161,7 @@ export function ProfileNotes({ profileId }: ProfileNotesProps) {
       }
     },
     [
-      currentAccount,
+      currentAddress,
       signPersonalMessage,
       orgRegistryId,
     ]
@@ -193,12 +194,12 @@ export function ProfileNotes({ profileId }: ProfileNotesProps) {
       encryption_id: devEncId.trim(),
       access_level: 0,
       created_at: new Date().toISOString(),
-      created_by: currentAccount?.address ?? "",
+      created_by: currentAddress ?? "",
       walrus_url: "",
       sui_explorer_url: "",
     };
     await runDecrypt(mockResource);
-  }, [profileId, orgRegistryId, devBlobId, devEncId, devResId, currentAccount, runDecrypt]);
+  }, [profileId, orgRegistryId, devBlobId, devEncId, devResId, currentAddress, runDecrypt]);
 
   return (
     <>
@@ -312,7 +313,7 @@ export function ProfileNotes({ profileId }: ProfileNotesProps) {
                       size="sm"
                       className="rounded-xl font-bold border-slate-200 hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700 gap-2 shrink-0"
                       onClick={() => runDecrypt(note)}
-                      disabled={!currentAccount}
+                      disabled={!currentAddress}
                     >
                       <ShieldCheck className="size-4" />
                       Decrypt & View
@@ -443,10 +444,10 @@ export function ProfileNotes({ profileId }: ProfileNotesProps) {
                     />
                   </div>
                 </div>
-                {!currentAccount ? (
+                {!currentAddress ? (
                   <Alert className="rounded-xl bg-amber-50 border-amber-200 text-amber-800">
                     <AlertDescription>
-                      Connect your Sui wallet to test decryption.
+                      Sign in with Google or connect your wallet to test decryption.
                     </AlertDescription>
                   </Alert>
                 ) : (
