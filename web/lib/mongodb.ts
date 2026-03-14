@@ -30,6 +30,7 @@ export interface UserRecord {
   role: "admin" | "member";
   hasOrg: boolean;
   orgName?: string;           // cached from onboarding
+  orgRegistryId?: string;     // on-chain OrgAccessRegistry object ID
   orgAdminAddress?: string;   // for members: points to their admin's suiAddress
   createdAt: Date;
   updatedAt: Date;

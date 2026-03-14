@@ -176,3 +176,53 @@ export function useUnifiedTransaction(options?: {
 
   return { execute, isPending: isSponsoring, error };
 }
+
+/**
+ * useUnifiedSignPersonalMessage — works for both wallet and zkLogin users.
+ *
+ * wallet  → delegates to dapp-kit useSignPersonalMessage
+ * zkLogin → signs with the stored ephemeral Ed25519 keypair
+ *
+ * Returns a function: (message: Uint8Array) => Promise<string>  (base64 signature)
+ */
+export function useUnifiedSignPersonalMessage(): {
+  signPersonalMessage: (message: Uint8Array) => Promise<string>;
+} {
+  const { authMode } = useUnifiedAccount();
+  const { mutateAsync: dappSignPersonalMessage } = useSignPersonalMessage();
+
+  const signPersonalMessage = useCallback(
+    async (message: Uint8Array): Promise<string> => {
+      if (authMode === "wallet") {
+        const result = await dappSignPersonalMessage({ message });
+        return result.signature;
+      }
+
+      if (authMode === "zk") {
+        const proof = SessionManager.getProof();
+        if (!proof) throw new Error("No zkLogin session found. Please sign in again.");
+
+        // Recreate the ephemeral keypair and sign the personal message
+        const keypair = ZkLoginService.recreateKeyPair(proof.ephemeralPrivateKey);
+        const { signature: ephemeralSig } = await keypair.signPersonalMessage(message);
+
+        // Wrap the ephemeral signature in a full zkLogin signature.
+        // Seal's SessionKey verifies address ownership — for a zkLogin address
+        // that requires the ZK proof, not a bare Ed25519 signature.
+        const zkLoginSig = ZkLoginService.createTransactionSignature(
+          proof.zkProof,
+          proof.maxEpoch,
+          ephemeralSig,
+          proof.jwtToken,
+          proof.userSalt
+        );
+        return zkLoginSig;
+      }
+
+      throw new Error("No active account. Sign in with Google or connect a wallet.");
+    },
+    [authMode, dappSignPersonalMessage]
+  );
+
+  return { signPersonalMessage };
+}

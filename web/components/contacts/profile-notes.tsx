@@ -12,8 +12,8 @@ import {
   Check,
   ShieldCheck,
 } from "lucide-react";
-import { useSignPersonalMessage } from "@mysten/dapp-kit";
-import { useUnifiedAccount } from "@/hooks/useUnifiedAuth";
+import { useUnifiedAccount, useUnifiedSignPersonalMessage } from "@/hooks/useUnifiedAuth";
+import { useUser } from "@/hooks/useUser";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -80,9 +80,13 @@ export function ProfileNotes({ profileId }: ProfileNotesProps) {
   const [devResId, setDevResId] = useState("");
 
   const { address: currentAddress } = useUnifiedAccount();
-  const { mutateAsync: signPersonalMessage } = useSignPersonalMessage();
+  const { signPersonalMessage } = useUnifiedSignPersonalMessage();
+  const { user } = useUser();
 
-  const orgRegistryId = CONTRACT_CONFIG.SHARED_OBJECTS.EXAMPLE_ORG_REGISTRY;
+  // Use the user's own OrgAccessRegistry so seal_approve can verify org membership.
+  // Fall back to the example registry only if orgRegistryId has not been captured yet.
+  const orgRegistryId =
+    user?.orgRegistryId ?? CONTRACT_CONFIG.SHARED_OBJECTS.EXAMPLE_ORG_REGISTRY;
 
   const fetchNotes = useCallback(async () => {
     setLoadingNotes(true);
@@ -130,10 +134,8 @@ export function ProfileNotes({ profileId }: ProfileNotesProps) {
         );
         setDecryptStep("sign");
 
-        const signatureResponse = await signPersonalMessage({
-          message: sessionKey.getPersonalMessage(),
-        });
-        await sessionKey.setPersonalMessageSignature(signatureResponse.signature);
+        const signature = await signPersonalMessage(sessionKey.getPersonalMessage());
+        await sessionKey.setPersonalMessageSignature(signature);
 
         setDecryptStep("decrypt");
         const result = await crmDecryptionService.downloadAndDecryptResources(
@@ -160,11 +162,7 @@ export function ProfileNotes({ profileId }: ProfileNotesProps) {
         toast.error("Decryption failed", { description: msg });
       }
     },
-    [
-      currentAddress,
-      signPersonalMessage,
-      orgRegistryId,
-    ]
+    [currentAddress, signPersonalMessage, orgRegistryId]
   );
 
   const handleCopy = useCallback(() => {

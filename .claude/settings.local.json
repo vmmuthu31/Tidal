@@ -31,7 +31,8 @@
       "Bash(sed -n '118,130p' /Users/kaushikk/Documents/Products/Sui-CRM/Sui-CRM/web/node_modules/@mysten/sui/src/transactions/Transaction.ts && sed -n '669,680p' /Users/kaushikk/Documents/Products/Sui-CRM/Sui-CRM/web/node_modules/@mysten/sui/src/transactions/Transaction.ts)",
       "Bash(cat:*)",
       "Bash(npm list:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(node:*)"
     ]
   }
 }

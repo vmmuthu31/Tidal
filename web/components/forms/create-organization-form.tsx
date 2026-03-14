@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSuiClient } from "@mysten/dapp-kit";
 import { Transaction } from "@mysten/sui/transactions";
 import { useUnifiedAccount, useUnifiedTransaction } from "@/hooks/useUnifiedAuth";
 import CONTRACT_CONFIG, { buildExplorerUrl } from "@/lib/config/contracts";
@@ -18,6 +19,7 @@ export function CreateOrganizationForm({
 }: CreateOrganizationFormProps) {
   const { address } = useUnifiedAccount();
   const { execute: signAndExecuteTransaction } = useUnifiedTransaction();
+  const suiClient = useSuiClient();
   const [orgName, setOrgName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -41,6 +43,26 @@ export function CreateOrganizationForm({
         arguments: [tx.pure.string(orgName)],
       });
       const res = await signAndExecuteTransaction({ transaction: tx });
+
+      // Capture the OrgAccessRegistry object ID so it can be used for Seal encryption
+      let orgRegistryId = "";
+      try {
+        const txResult = await suiClient.waitForTransaction({
+          digest: res.digest,
+          options: { showObjectChanges: true },
+        });
+        const created = txResult.objectChanges?.find(
+          (c: any) => c.type === "created" && c.objectType?.includes("OrgAccessRegistry")
+        ) as any;
+        orgRegistryId = created?.objectId ?? "";
+        if (orgRegistryId && address) {
+          await fetch("/api/users", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ suiAddress: address, hasOrg: true, orgName, orgRegistryId }),
+          });
+        }
+      } catch { /* non-fatal — org was still created */ }
 
       toast.success("Organization Created!", {
         description: "Your organization and registry were successfully generated.",

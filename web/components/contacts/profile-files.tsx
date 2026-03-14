@@ -2,9 +2,9 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { FileUp, Upload, FileText, Download, Loader2, ShieldCheck } from "lucide-react";
-import { useSignPersonalMessage } from "@mysten/dapp-kit";
+import { useUnifiedAccount, useUnifiedTransaction, useUnifiedSignPersonalMessage } from "@/hooks/useUnifiedAuth";
 import { Transaction } from "@mysten/sui/transactions";
-import { useUnifiedAccount, useUnifiedTransaction } from "@/hooks/useUnifiedAuth";
+import { useUser } from "@/hooks/useUser";
 import { useSuiClient } from "@mysten/dapp-kit";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -34,7 +34,11 @@ export function ProfileFiles({ profileId, onchainObjectId }: ProfileFilesProps) 
   const { address } = useUnifiedAccount();
   const { execute: signAndExecuteTransaction } = useUnifiedTransaction();
   const suiClient = useSuiClient();
-  const { mutateAsync: signPersonalMessage } = useSignPersonalMessage();
+  const { signPersonalMessage } = useUnifiedSignPersonalMessage();
+  const { user } = useUser();
+
+  const orgRegistryId =
+    user?.orgRegistryId ?? CONTRACT_CONFIG.SHARED_OBJECTS.EXAMPLE_ORG_REGISTRY;
 
   const [file, setFile] = useState<File | null>(null);
   const [accessLevel, setAccessLevel] = useState<OrgRole>(2);
@@ -44,8 +48,6 @@ export function ProfileFiles({ profileId, onchainObjectId }: ProfileFilesProps) 
   const [loadingFiles, setLoadingFiles] = useState(true);
   const [downloadId, setDownloadId] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-
-  const orgRegistryId = CONTRACT_CONFIG.SHARED_OBJECTS.EXAMPLE_ORG_REGISTRY;
 
   const fetchFiles = useCallback(async () => {
     setLoadingFiles(true);
@@ -71,13 +73,12 @@ export function ProfileFiles({ profileId, onchainObjectId }: ProfileFilesProps) 
     setUploading(true);
     try {
       const { crmEncryptionService } = await import("@/lib/services/encryptionService");
-      const MOCK_ORG_ID = CONTRACT_CONFIG.SHARED_OBJECTS.EXAMPLE_ORG_REGISTRY;
 
       const result = await crmEncryptionService.encryptAndUploadResource(
         file,
         profileId,
-        MOCK_ORG_ID,
-        MOCK_ORG_ID,
+        orgRegistryId,
+        orgRegistryId,
         "file",
         accessLevel,
         address
@@ -157,8 +158,8 @@ export function ProfileFiles({ profileId, onchainObjectId }: ProfileFilesProps) 
     setDownloadId(meta.id);
     try {
       const sessionKey = await crmDecryptionService.createSessionKey(address);
-      const sig = await signPersonalMessage({ message: sessionKey.getPersonalMessage() });
-      await sessionKey.setPersonalMessageSignature(sig.signature);
+      const sig = await signPersonalMessage(sessionKey.getPersonalMessage());
+      await sessionKey.setPersonalMessageSignature(sig);
 
       const result = await crmDecryptionService.downloadAndDecryptResources(
         [meta.resource], orgRegistryId, sessionKey

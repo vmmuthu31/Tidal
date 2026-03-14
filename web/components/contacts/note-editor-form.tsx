@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useSuiClient } from "@mysten/dapp-kit";
 import { Transaction } from "@mysten/sui/transactions";
 import { useUnifiedAccount, useUnifiedTransaction } from "@/hooks/useUnifiedAuth";
+import { useUser } from "@/hooks/useUser";
 import CONTRACT_CONFIG, { buildExplorerUrl } from "@/lib/config/contracts";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -34,6 +35,9 @@ export function NoteEditorForm({
   const { address } = useUnifiedAccount();
   const client = useSuiClient();
   const { execute: signAndExecuteTransaction } = useUnifiedTransaction();
+  const { user } = useUser();
+  const orgRegistryId =
+    user?.orgRegistryId ?? CONTRACT_CONFIG.SHARED_OBJECTS.EXAMPLE_ORG_REGISTRY;
 
   const [content, setContent] = useState("");
   const [accessLevel, setAccessLevel] = useState<OrgRole>(3);
@@ -51,14 +55,12 @@ export function NoteEditorForm({
     setError(null);
     try {
       const { crmEncryptionService } = await import("@/lib/services/encryptionService");
-      const MOCK_ORG_ID = CONTRACT_CONFIG.SHARED_OBJECTS.EXAMPLE_ORG_REGISTRY;
-      const MOCK_ORG_REGISTRY_ID = CONTRACT_CONFIG.SHARED_OBJECTS.EXAMPLE_ORG_REGISTRY;
 
       const result = await crmEncryptionService.encryptAndUploadResource(
         content,
         profileId,
-        MOCK_ORG_ID,
-        MOCK_ORG_REGISTRY_ID,
+        orgRegistryId,
+        orgRegistryId,
         "note",
         accessLevel,
         address!
