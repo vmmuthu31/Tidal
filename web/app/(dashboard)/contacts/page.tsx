@@ -21,20 +21,27 @@ interface Contact {
 }
 
 export default function ContactsPage() {
-  const { user } = useUser();
+  const { user, loading: userLoading } = useUser();
   const [contacts, setContacts] = useState<Contact[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loadingContacts, setLoadingContacts] = useState(false);
   const [search, setSearch] = useState("");
 
+  // Members should see their admin's contacts
+  const queryAddress = user?.role === "member" && user?.orgAdminAddress
+    ? user.orgAdminAddress
+    : user?.suiAddress;
+
   useEffect(() => {
-    if (!user?.suiAddress) return;
-    setLoading(true);
-    fetch(`/api/contacts?adminAddress=${user.suiAddress}`)
+    if (!queryAddress) return;
+    setLoadingContacts(true);
+    fetch(`/api/contacts?adminAddress=${queryAddress}`)
       .then((r) => r.json())
       .then((data) => setContacts(data.contacts ?? []))
       .catch(() => setContacts([]))
-      .finally(() => setLoading(false));
-  }, [user?.suiAddress]);
+      .finally(() => setLoadingContacts(false));
+  }, [queryAddress]);
+
+  const loading = userLoading || loadingContacts;
 
   const filtered = contacts.filter((c) =>
     c.name.toLowerCase().includes(search.toLowerCase()) ||

@@ -117,7 +117,20 @@ export default function AuthCallbackPage() {
               if (userRes.ok) {
                 const data = await userRes.json();
                 isNewUser = data.isNewUser ?? true;
-                // Stamp org membership onto member record
+
+                // Fetch admin's orgRegistryId and copy to member
+                let adminOrgRegistryId: string | undefined;
+                try {
+                  const adminRes = await fetch(`/api/users?address=${invite.adminAddress}`);
+                  if (adminRes.ok) {
+                    const adminData = await adminRes.json();
+                    adminOrgRegistryId = adminData.user?.orgRegistryId;
+                  }
+                } catch {
+                  console.warn("Could not fetch admin's orgRegistryId");
+                }
+
+                // Stamp org membership + orgRegistryId onto member record
                 await fetch("/api/users", {
                   method: "PATCH",
                   headers: { "Content-Type": "application/json" },
@@ -125,12 +138,17 @@ export default function AuthCallbackPage() {
                     suiAddress: address,
                     hasOrg: true,
                     orgName: invite.orgName,
+                    ...(adminOrgRegistryId ? { orgRegistryId: adminOrgRegistryId } : {}),
                   }),
                 });
               }
 
-              // Mark invite as accepted
-              await fetch(`/api/invites/${inviteToken}`, { method: "PATCH" });
+              // Mark invite as accepted and save member address
+              await fetch(`/api/invites/${inviteToken}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ memberAddress: address }),
+              });
             }
           } catch {
             console.warn("Could not process invite; continuing as member.");

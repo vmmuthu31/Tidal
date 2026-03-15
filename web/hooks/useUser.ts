@@ -27,19 +27,41 @@ export function useUser(): UseUserResult {
         const loaded: UserRecord | null = data.user ?? null;
         setUser(loaded);
 
-        // If the user has an org but we don't have their OrgAccessRegistry ID yet,
-        // look it up from their on-chain transaction history and cache it.
         if (loaded?.hasOrg && !loaded.orgRegistryId) {
-          try {
-            const syncRes = await fetch(`/api/users/sync-org?address=${address}`);
-            const syncData = await syncRes.json();
-            if (syncData.orgRegistryId) {
-              setUser((prev) =>
-                prev ? { ...prev, orgRegistryId: syncData.orgRegistryId } : prev
-              );
+          // For members: fetch admin's orgRegistryId
+          if (loaded.role === "member" && loaded.orgAdminAddress) {
+            try {
+              const adminRes = await fetch(`/api/users?address=${loaded.orgAdminAddress}`);
+              const adminData = await adminRes.json();
+              if (adminData.user?.orgRegistryId) {
+                await fetch(`/api/users`, {
+                  method: "PATCH",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    suiAddress: loaded.suiAddress,
+                    orgRegistryId: adminData.user.orgRegistryId,
+                  }),
+                });
+                setUser((prev) =>
+                  prev ? { ...prev, orgRegistryId: adminData.user.orgRegistryId } : prev
+                );
+              }
+            } catch {
+              // Non-fatal — user will fall back to EXAMPLE_ORG_REGISTRY
             }
-          } catch {
-            // Non-fatal — user will fall back to EXAMPLE_ORG_REGISTRY
+          } else {
+            // For admins: look it up from their on-chain transaction history
+            try {
+              const syncRes = await fetch(`/api/users/sync-org?address=${address}`);
+              const syncData = await syncRes.json();
+              if (syncData.orgRegistryId) {
+                setUser((prev) =>
+                  prev ? { ...prev, orgRegistryId: syncData.orgRegistryId } : prev
+                );
+              }
+            } catch {
+              // Non-fatal — user will fall back to EXAMPLE_ORG_REGISTRY
+            }
           }
         }
       })

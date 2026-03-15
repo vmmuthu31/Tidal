@@ -86,6 +86,7 @@ export class DocumentDecryptionService {
     return (tx: Transaction, fullId: string) => {
       // First arg MUST be the Seal encryption ID as vector<u8> bytes (without 0x prefix)
       const idHex = fullId.startsWith('0x') ? fullId.slice(2) : fullId;
+      console.log('🔐 seal_approve args:', { resourceId, orgRegistryId, profileRegistryId, fullId });
       tx.moveCall({
         target: `${PACKAGE_ID}::crm_access_control::seal_approve`,
         arguments: [
@@ -134,6 +135,12 @@ export class DocumentDecryptionService {
         const fileName = resource.file_name || `${resource.resource_type}_${i + 1}`;
         onProgress?.(`Decrypting resource ${i + 1}/${resources.length}: ${fileName}...`);
 
+        // Validate resource_id is a real object ID
+        if (!resource.resource_id || resource.resource_id.length < 10) {
+          console.error(`⚠️ Invalid resource_id for ${fileName}: "${resource.resource_id}" — skipping`);
+          continue;
+        }
+
         const moveCallConstructor = this.createMoveCallConstructor(
           resource.resource_id,
           orgRegistryId,
@@ -173,11 +180,33 @@ export class DocumentDecryptionService {
           moveCallConstructor(tx, fullId);
           const txBytes = await tx.build({ client: SUI_CLIENT, onlyTransactionKind: true });
 
-          const decryptedData = await sealClient.decrypt({
-            data: encryptedBytes,
-            sessionKey,
-            txBytes,
-          });
+          // Retry logic: Seal key servers may not see recently created/modified objects immediately
+          let decryptedData: Uint8Array | null = null;
+          let lastError: unknown = null;
+          for (let attempt = 0; attempt < 3; attempt++) {
+            try {
+              decryptedData = await sealClient.decrypt({
+                data: encryptedBytes,
+                sessionKey,
+                txBytes,
+              });
+              break; // Success
+            } catch (err) {
+              lastError = err;
+              const errMsg = err instanceof Error ? err.message : String(err);
+              if (errMsg.includes('newly created object') || errMsg.includes('InvalidParameter')) {
+                console.warn(`⏳ Seal retry ${attempt + 1}/3 — FN may not have indexed object yet`);
+                onProgress?.(`Waiting for network sync (attempt ${attempt + 1}/3)...`);
+                await new Promise((r) => setTimeout(r, 3000 * (attempt + 1))); // 3s, 6s, 9s
+              } else {
+                throw err; // Non-retryable error
+              }
+            }
+          }
+
+          if (!decryptedData) {
+            throw lastError ?? new Error('Decryption failed after retries');
+          }
 
           console.log(`✅ Decryption successful for ${fileName}`);
 
