@@ -23,11 +23,14 @@ const FROM = process.env.SMTP_FROM || process.env.SMTP_USER || "noreply@suicrm.a
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { adminAddress, adminName, orgName, inviteeName, inviteeEmail } = body;
+    const { adminAddress, adminName, orgName, inviteeName, inviteeEmail, role: inviteRole } = body;
 
     if (!adminAddress || !adminName || !orgName || !inviteeName || !inviteeEmail) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
+
+    const validRoles = ["viewer", "member", "manager", "admin"] as const;
+    const selectedRole = validRoles.includes(inviteRole) ? inviteRole : "member";
 
     const db = await getDb();
     const invites = db.collection<InviteRecord>("invites");
@@ -47,7 +50,7 @@ export async function POST(req: NextRequest) {
       orgName,
       inviteeName,
       inviteeEmail,
-      role: "member",
+      role: selectedRole,
       status: "pending",
       expiresAt,
       createdAt: new Date(),
@@ -82,11 +85,49 @@ export async function GET(req: NextRequest) {
     const db = await getDb();
     const invites = await db
       .collection<InviteRecord>("invites")
-      .find({ adminAddress })
+      .find({ adminAddress, status: { $ne: "removed" } })
       .sort({ createdAt: -1 })
       .toArray();
 
-    return NextResponse.json({ invites });
+    // Enrich accepted invites: backfill memberAddress from user records if missing,
+    // and add onchainRegistered status
+    const enriched = await Promise.all(
+      invites.map(async (invite) => {
+        if (invite.status !== "accepted") return invite;
+
+        let memberAddr = invite.memberAddress;
+
+        // Backfill memberAddress for old invites (pre-code-change) by looking up user by email + orgAdminAddress
+        if (!memberAddr) {
+          const memberUser = await db.collection("users").findOne(
+            { orgAdminAddress: adminAddress, email: invite.inviteeEmail, role: "member" },
+            { projection: { suiAddress: 1, onchainRegistered: 1 } }
+          );
+          if (memberUser?.suiAddress) {
+            memberAddr = memberUser.suiAddress;
+            // Persist the backfill so we don't have to look it up again
+            await db.collection<InviteRecord>("invites").updateOne(
+              { token: invite.token },
+              { $set: { memberAddress: memberAddr } }
+            );
+            return {
+              ...invite,
+              memberAddress: memberAddr,
+              onchainRegistered: memberUser.onchainRegistered ?? false,
+            };
+          }
+          return invite;
+        }
+
+        const memberUser = await db.collection("users").findOne(
+          { suiAddress: memberAddr },
+          { projection: { onchainRegistered: 1 } }
+        );
+        return { ...invite, onchainRegistered: memberUser?.onchainRegistered ?? false };
+      })
+    );
+
+    return NextResponse.json({ invites: enriched });
   } catch (err: any) {
     console.error("[GET /api/invites]", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

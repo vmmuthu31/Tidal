@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getDb, type ContactRecord } from "@/lib/mongodb";
 
 // GET /api/contacts?adminAddress=0x...
+// Members pass their orgAdminAddress so they see the same contacts as their admin.
 export async function GET(req: NextRequest) {
   try {
     const adminAddress = req.nextUrl.searchParams.get("adminAddress");

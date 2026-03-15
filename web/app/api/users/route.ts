@@ -60,7 +60,7 @@ export async function GET(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   try {
     const body = await req.json();
-    const { suiAddress, hasOrg, orgName, orgRegistryId, name } = body;
+    const { suiAddress, hasOrg, orgName, orgRegistryId, name, onchainRegistered, orgAdminAddress, role } = body;
     if (!suiAddress) return NextResponse.json({ error: "Missing suiAddress" }, { status: 400 });
 
     const db = await getDb();
@@ -69,6 +69,9 @@ export async function PATCH(req: NextRequest) {
     if (orgName !== undefined) update.orgName = orgName;
     if (orgRegistryId !== undefined) update.orgRegistryId = orgRegistryId;
     if (name !== undefined) update.name = name;
+    if (onchainRegistered !== undefined) update.onchainRegistered = !!onchainRegistered;
+    if (orgAdminAddress !== undefined) update.orgAdminAddress = orgAdminAddress;
+    if (role !== undefined) update.role = role;
 
     await db.collection<UserRecord>("users").updateOne({ suiAddress }, { $set: update });
     return NextResponse.json({ success: true });

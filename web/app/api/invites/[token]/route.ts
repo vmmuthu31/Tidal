@@ -28,17 +28,31 @@ export async function GET(
   }
 }
 
-// PATCH /api/invites/[token] — mark accepted
+// PATCH /api/invites/[token] — mark accepted (optionally save memberAddress)
 export async function PATCH(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ token: string }> }
 ) {
   try {
     const { token } = await params;
+    let memberAddress: string | undefined;
+    let statusOverride: string | undefined;
+    try {
+      const body = await req.json();
+      memberAddress = body.memberAddress;
+      statusOverride = body.status;
+    } catch {
+      // No body is fine — backwards compatible
+    }
     const db = await getDb();
+    const validStatuses = ["accepted", "expired", "removed"];
+    const update: Record<string, unknown> = {
+      status: statusOverride && validStatuses.includes(statusOverride) ? statusOverride : "accepted",
+    };
+    if (memberAddress) update.memberAddress = memberAddress;
     await db
       .collection<InviteRecord>("invites")
-      .updateOne({ token }, { $set: { status: "accepted" } });
+      .updateOne({ token }, { $set: update });
     return NextResponse.json({ success: true });
   } catch (err: any) {
     console.error("[PATCH /api/invites/[token]]", err);
