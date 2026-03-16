@@ -90,30 +90,46 @@ export async function handleMessageCreate(message: Message): Promise<void> {
 
   // ── Campaign commands ──────────────────────────────────────────────
   if (message.content.startsWith("!campaign")) {
-    const parts = message.content.split(/\s+/);
-    const command = parts[1];
-    const args = parts.slice(2);
-    await handleCampaignCommand(message, `campaign-${command || 'help'}`, args);
+    const parts = message.content.trim().split(/\s+/);
+    const firstToken = parts[0].toLowerCase();
+
+    let command = "campaign-help";
+    let args: string[] = [];
+
+    if (firstToken === "!campaign") {
+      command = `campaign-${parts[1]?.toLowerCase() || "help"}`;
+      args = parts.slice(2);
+    } else if (firstToken.startsWith("!campaign-")) {
+      command = firstToken.slice(1);
+      args = parts.slice(1);
+    }
+
+    await handleCampaignCommand(message, command, args);
     return;
   }
 
   // ── Seal + Walrus commands ──────────────────────────────────────────────
   if (message.content.startsWith("!encrypt ") && isSealConfigured()) {
     const text = message.content.slice("!encrypt ".length).trim();
-    if (!text) { await message.reply("Usage: `!encrypt <text>`"); return; }
+    if (!text) {
+      await message.reply("Usage: `!encrypt <text>`");
+      return;
+    }
     try {
       await message.reply("🔒 Encrypting and uploading to Walrus…");
       const data = new TextEncoder().encode(text);
       const result = await encryptAndUpload(data);
       await message.reply(
         `✅ Encrypted & stored on Walrus\n` +
-        `**Blob ID:** \`${result.blobId}\`\n` +
-        `**Encryption ID:** \`${result.encryptionId}\`\n` +
-        `**Sui Ref:** \`${result.suiRef}\``
+          `**Blob ID:** \`${result.blobId}\`\n` +
+          `**Encryption ID:** \`${result.encryptionId}\`\n` +
+          `**Sui Ref:** \`${result.suiRef}\``,
       );
     } catch (err) {
       console.error("Encrypt command failed:", err);
-      await message.reply(`❌ Encryption failed: ${err instanceof Error ? err.message : String(err)}`);
+      await message.reply(
+        `❌ Encryption failed: ${err instanceof Error ? err.message : String(err)}`,
+      );
     }
     return;
   }
@@ -133,7 +149,9 @@ export async function handleMessageCreate(message: Message): Promise<void> {
       await message.reply(`✅ Decrypted content:\n\`\`\`\n${preview}\n\`\`\``);
     } catch (err) {
       console.error("Decrypt command failed:", err);
-      await message.reply(`❌ Decryption failed: ${err instanceof Error ? err.message : String(err)}`);
+      await message.reply(
+        `❌ Decryption failed: ${err instanceof Error ? err.message : String(err)}`,
+      );
     }
     return;
   }
