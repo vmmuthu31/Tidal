@@ -1,6 +1,29 @@
 import { NextResponse } from "next/server";
 import { getSurrealClient } from "@/lib/surreal";
 
+interface CampaignRecord {
+  id?: string | { tb?: string; id?: string };
+  name?: string;
+  description?: string | null;
+  status?: "active" | "paused" | "completed";
+  created_by?: string | null;
+  guild_id?: string | null;
+  channel_id?: string | null;
+  start_date?: string | null;
+  end_date?: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
+function toCampaignId(id: CampaignRecord["id"]): string {
+  if (!id) return "";
+  if (typeof id === "string") {
+    return id.includes(":") ? id.split(":")[1] : id;
+  }
+  if (id.id) return id.id;
+  return "";
+}
+
 export async function GET(req: Request) {
   try {
     const url = new URL(req.url);
@@ -8,12 +31,12 @@ export async function GET(req: Request) {
 
     const db = await getSurrealClient();
 
-    const campaigns = await db.select("campaign:*");
+    const campaigns = (await db.select("campaign")) as CampaignRecord[];
 
     const filtered = campaigns
-      .filter((c: any) => !status || c.status === status)
-      .map((c: any) => ({
-        id: c.id,
+      .filter((c) => !status || c.status === status)
+      .map((c) => ({
+        id: toCampaignId(c.id),
         name: c.name,
         description: c.description,
         status: c.status,
@@ -61,7 +84,7 @@ export async function POST(req: Request) {
       updated_at: new Date().toISOString(),
     };
 
-    const result = await db.create("campaign", campaign);
+    await db.create(`campaign:${campaign.id}`, campaign);
 
     return NextResponse.json(campaign, { status: 201 });
   } catch (error) {

@@ -12,6 +12,40 @@ import {
 } from "../services/campaignService.js";
 import type { Campaign } from "../types.js";
 
+interface CampaignStatsResponse {
+  campaign_id: string;
+  total_interactions: number;
+  total_participants: number;
+  interactions_by_kind: Record<string, number>;
+  top_participants: Array<{
+    user_id: string;
+    username?: string;
+    interaction_count: number;
+  }>;
+}
+
+const CAMPAIGN_API_BASE_URL =
+  process.env.CAMPAIGN_API_BASE_URL ||
+  process.env.WEBHOOK_URL?.replace("/api/webhooks/discord", "") ||
+  "http://localhost:3000";
+
+async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
+  const response = await fetch(`${CAMPAIGN_API_BASE_URL}${path}`, {
+    ...init,
+    headers: {
+      "Content-Type": "application/json",
+      ...(init?.headers || {}),
+    },
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`API ${response.status}: ${errorText}`);
+  }
+
+  return (await response.json()) as T;
+}
+
 /**
  * Campaign Commands Handler
  * Supports both slash commands and message commands
@@ -76,9 +110,19 @@ async function sendCampaignStats(
   try {
     await message.reply("🔍 Loading campaign stats...");
 
-    // In a real implementation, you would fetch from SurrealDB
-    // For now, we'll show Discord-based metrics
-    const stats = await getCampaignStats(campaignId);
+    const apiStats = await requestJson<CampaignStatsResponse>(
+      `/api/campaigns/${encodeURIComponent(campaignId)}/stats`,
+    );
+    const stats = await getCampaignStats(campaignId, {
+      total_interactions: apiStats.total_interactions,
+      total_participants: apiStats.total_participants,
+      interactions_by_kind: apiStats.interactions_by_kind,
+      top_participants: apiStats.top_participants.map((participant) => ({
+        user_id: participant.user_id,
+        username: participant.username || participant.user_id,
+        interaction_count: participant.interaction_count,
+      })),
+    });
 
     const embed = new EmbedBuilder()
       .setTitle(`📈 Campaign Stats: ${campaignId}`)
@@ -148,20 +192,16 @@ async function createCampaign(
   const description = args.slice(1).join(" ") || "";
 
   try {
-    const campaign: Campaign = {
-      id: `campaign_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      name: campaignName,
-      description,
-      created_by: message.author.id,
-      guild_id: message.guildId || undefined,
-      channel_id: message.channelId,
-      status: "active",
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
-
-    // In a real implementation, save to SurrealDB
-    // db.create('campaign', campaign)
+    const campaign = await requestJson<Campaign>("/api/campaigns", {
+      method: "POST",
+      body: JSON.stringify({
+        name: campaignName,
+        description,
+        created_by: message.author.id,
+        guild_id: message.guildId || undefined,
+        channel_id: message.channelId,
+      }),
+    });
 
     const embed = new EmbedBuilder()
       .setTitle("✅ Campaign Created")
@@ -200,11 +240,10 @@ async function createCampaign(
 
 async function listCampaigns(message: Message): Promise<void> {
   try {
-    // In a real implementation, fetch from SurrealDB
-    // const campaigns = await db.select('campaign:*')
-    // const activeCampaigns = getActiveCampaigns(campaigns)
-
-    const activeCampaigns: Campaign[] = [];
+    const response = await requestJson<{ campaigns: Campaign[] }>(
+      "/api/campaigns?status=active",
+    );
+    const activeCampaigns = response.campaigns;
 
     if (activeCampaigns.length === 0) {
       await message.reply("❌ No active campaigns found");
@@ -277,7 +316,13 @@ async function announceCampaign(
 }
 
 async function getCampaignById(_campaignId: string): Promise<Campaign | null> {
-  return null;
+  try {
+    return await requestJson<Campaign>(
+      `/api/campaigns/${encodeURIComponent(_campaignId)}`,
+    );
+  } catch {
+    return null;
+  }
 }
 
 async function showCampaignLeaderboard(
@@ -294,7 +339,19 @@ async function showCampaignLeaderboard(
   try {
     await message.reply("🏆 Loading leaderboard...");
 
-    const stats = await getCampaignStats(campaignId);
+    const apiStats = await requestJson<CampaignStatsResponse>(
+      `/api/campaigns/${encodeURIComponent(campaignId)}/stats`,
+    );
+    const stats = await getCampaignStats(campaignId, {
+      total_interactions: apiStats.total_interactions,
+      total_participants: apiStats.total_participants,
+      interactions_by_kind: apiStats.interactions_by_kind,
+      top_participants: apiStats.top_participants.map((participant) => ({
+        user_id: participant.user_id,
+        username: participant.username || participant.user_id,
+        interaction_count: participant.interaction_count,
+      })),
+    });
 
     const embed = new EmbedBuilder()
       .setTitle(`🏆 Campaign Leaderboard: ${campaignId}`)

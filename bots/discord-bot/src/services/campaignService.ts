@@ -1,12 +1,7 @@
-import type { Client, Guild, TextChannel, Message } from "discord.js";
-import type { Campaign, CampaignStats, CampaignAggregation } from "../types.js";
+import type { Client, TextChannel, Message } from "discord.js";
+import type { Campaign, CampaignStats } from "../types.js";
 
-/**
- * Campaign service handles aggregation of campaign data from SurrealDB
- * and real-time Discord metrics. Provides statistics and analytics for campaigns.
- */
 
-// Store in-memory campaign metrics (supplements SurrealDB)
 const campaignMetrics = new Map<
   string,
   {

@@ -1,73 +1,74 @@
 import { NextResponse } from "next/server";
 import { getSurrealClient } from "@/lib/surreal";
 
+type InteractionRow = {
+  user?: string;
+  action?: string;
+  metadata?: {
+    username?: string;
+    [key: string]: unknown;
+  };
+};
+
+function extractRows(result: unknown): InteractionRow[] {
+  if (!Array.isArray(result)) return [];
+  if (result.length > 0 && typeof result[0] === "object" && result[0] && "result" in (result[0] as Record<string, unknown>)) {
+    const first = result[0] as { result?: unknown };
+    return Array.isArray(first.result) ? (first.result as InteractionRow[]) : [];
+  }
+  return result as InteractionRow[];
+}
+
 export async function GET(
-  req: Request,
+  _req: Request,
   { params }: { params: { campaignId: string } }
 ) {
   try {
     const { campaignId } = params;
     const db = await getSurrealClient();
 
-    const interactions = await db.query(
-      `SELECT 
-        COUNT() as total,
-        kind,
-        user
-      FROM interaction_log 
-      WHERE campaign_id = $campaignId 
-      GROUP BY kind`,
-      { campaignId }
+    const rawResult = await db.query(
+      `SELECT user, action, metadata
+       FROM interaction_log
+       WHERE campaign_id = $campaignId`,
+      { campaignId },
     );
 
-    const participantStats = await db.query(
-      `SELECT 
-        user,
-        COUNT() as interaction_count
-      FROM interaction_log 
-      WHERE campaign_id = $campaignId 
-      GROUP BY user
-      ORDER BY interaction_count DESC
-      LIMIT 10`,
-      { campaignId }
-    );
+    const rows = extractRows(rawResult);
+    const total = rows.length;
+    const byKind = new Map<string, number>();
+    const users = new Map<string, { count: number; username?: string }>();
 
-    const totalInteractions = await db.query(
-      `SELECT COUNT() as total FROM interaction_log WHERE campaign_id = $campaignId`,
-      { campaignId }
-    );
+    for (const row of rows) {
+      const kind = row.action || "campaign_interaction";
+      byKind.set(kind, (byKind.get(kind) || 0) + 1);
 
-    const uniqueParticipants = await db.query(
-      `SELECT COUNT(DISTINCT user) as count FROM interaction_log WHERE campaign_id = $campaignId`,
-      { campaignId }
-    );
+      const userId = row.user || "unknown";
+      const current = users.get(userId);
+      users.set(userId, {
+        count: (current?.count || 0) + 1,
+        username: row.metadata?.username || current?.username,
+      });
+    }
 
-    const interactionsByKind = interactions.reduce(
-      (acc: Record<string, number>, result: any) => {
-        if (Array.isArray(result)) {
-          result.forEach((item: any) => {
-            acc[item.kind] = item.total;
-          });
-        }
-        return acc;
-      },
-      {}
-    );
+    const topParticipants = Array.from(users.entries())
+      .map(([user_id, value]) => ({
+        user_id,
+        username: value.username,
+        interaction_count: value.count,
+      }))
+      .sort((a, b) => b.interaction_count - a.interaction_count)
+      .slice(0, 10);
 
-    const topParticipants = participantStats
-      .flat()
-      .map((item: any) => ({
-        user_id: item.user,
-        interaction_count: item.interaction_count,
-      }));
-
-    const total = totalInteractions.flat()[0]?.total || 0;
-    const participants = uniqueParticipants.flat()[0]?.count || 0;
+    const interactionsByKind: Record<string, number> = {};
+    for (const [kind, count] of byKind.entries()) {
+      interactionsByKind[kind] = count;
+    }
 
     return NextResponse.json({
       campaign_id: campaignId,
       total_interactions: total,
-      total_participants: participants,
+      total_participants: users.size,
       interactions_by_kind: interactionsByKind,
       top_participants: topParticipants,
       timestamp: new Date().toISOString(),
