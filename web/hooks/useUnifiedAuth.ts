@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { useCurrentAccount, useSignAndExecuteTransaction, useSignPersonalMessage } from "@mysten/dapp-kit";
 import { Transaction } from "@mysten/sui/transactions";
 import { SessionManager } from "@/lib/zklogin/session";
@@ -23,11 +23,9 @@ export interface UnifiedAccount {
  */
 export function useUnifiedAccount(): UnifiedAccount {
   const dappAccount = useCurrentAccount();
-  const [zkProof, setZkProof] = useState<ReturnType<typeof SessionManager.getProof>>(null);
-
-  useEffect(() => {
-    setZkProof(SessionManager.getProof());
-  }, []);
+  const [zkProof] = useState<ReturnType<typeof SessionManager.getProof>>(() =>
+    typeof window !== "undefined" ? SessionManager.getProof() : null,
+  );
 
   const address = dappAccount?.address ?? zkProof?.address ?? null;
   const authMode: AuthMode = dappAccount ? "wallet" : zkProof ? "zk" : null;

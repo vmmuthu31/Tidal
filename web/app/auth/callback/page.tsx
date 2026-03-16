@@ -229,7 +229,7 @@ export default function AuthCallbackPage() {
               </svg>
             </div>
             <div className="space-y-2">
-              <h2 className="text-2xl font-black text-[#1a1a1a] tracking-tight">You're in!</h2>
+              <h2 className="text-2xl font-black text-[#1a1a1a] tracking-tight">You&apos;re in!</h2>
               <p className="text-sm text-slate-500">Account ready. Taking you to your workspace…</p>
             </div>
           </>

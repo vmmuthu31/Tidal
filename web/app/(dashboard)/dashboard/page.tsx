@@ -108,7 +108,7 @@ export default function DashboardPage() {
             </div>
           </div>
           <p className="text-sm text-slate-500 leading-relaxed">
-            Manage your team's permissions, roles, and encrypted access keys from your organization workspace.
+            Manage your team&apos;s permissions, roles, and encrypted access keys from your organization workspace.
           </p>
           <div className="flex items-center justify-between pt-2 border-t border-slate-50">
             <div className="flex gap-6">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
@@ -20,7 +20,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -98,10 +97,9 @@ function WalletArea() {
   const { mutate: disconnectWallet } = useDisconnectWallet();
 
   // ZK login
-  const [zkProof, setZkProof] = useState<CachedProofData | null>(null);
-  useEffect(() => {
-    setZkProof(SessionManager.getProof());
-  }, []);
+  const [zkProof, setZkProof] = useState<CachedProofData | null>(() =>
+    typeof window !== "undefined" ? SessionManager.getProof() : null,
+  );
 
   const [copied, setCopied] = useState(false);
 
@@ -246,13 +244,20 @@ function WalletArea() {
   );
 }
 
+function useHydrated(): boolean {
+  return useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
+}
+
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  const mounted = useHydrated();
 
   return (
     <SidebarProvider>

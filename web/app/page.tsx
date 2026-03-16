@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useCurrentAccount } from "@mysten/dapp-kit";
@@ -36,11 +36,11 @@ const staggerContainer = {
 export default function Home() {
   const router = useRouter();
   const walletAccount = useCurrentAccount();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
 
   useEffect(() => {
     if (!mounted) return;
@@ -272,7 +272,7 @@ export default function Home() {
                 {[
                   { title: "Role-Based Access", desc: "Viewer, Member, Manager, Admin — each role enforced seamlessly on-chain.", icon: Users, bg: "bg-blue-100", text: "text-blue-600" },
                   { title: "Zero-Knowledge Auth", desc: "Sign in with Google. zkLogin generates a self-custodial wallet instantly.", icon: Activity, bg: "bg-purple-100", text: "text-purple-600" },
-                  { title: "Threshold Encryption", desc: "Even the node operators cannot read your clients' structured data.", icon: Lock, bg: "bg-emerald-100", text: "text-emerald-600" },
+                  { title: "Threshold Encryption", desc: "Even the node operators cannot read your clients’ structured data.", icon: Lock, bg: "bg-emerald-100", text: "text-emerald-600" },
                   { title: "Walrus Storage", desc: "Huge binary files mapped securely and decentralized directly on Sui.", icon: Globe, bg: "bg-orange-100", text: "text-orange-600" },
                 ].map((item, i) => (
                   <motion.div variants={fadeUp} key={i} className="bg-[#F8F9FA] rounded-[32px] p-8 hover:bg-[#F0F2F5] transition-all cursor-pointer border border-black/5 hover:-translate-y-1 hover:shadow-md">
@@ -393,12 +393,13 @@ export default function Home() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
               {[
                 { name: "Alex Chen", role: "Founder, Web3 Startup", text: "Tidal showed us what's actually possible. Using Walrus for file storage instead of AWS saves us tons of money." },
-                { name: "Sarah Jenkins", role: "Sales Director", text: "The zero-knowledge login means my sales reps don't have to deal with seed phrases to interact on chain." },
+                { name: "Alex Chen", role: "Founder, Web3 Startup", text: "Tidal showed us what’s actually possible. Using Walrus for file storage instead of AWS saves us tons of money." },
+                { name: "Sarah Jenkins", role: "Sales Director", text: "The zero-knowledge login means my sales reps don’t have to deal with seed phrases to interact on chain." },
                 { name: "Mike Rostova", role: "DAOs Lead", text: "Finally an organizational tool prioritizing privacy. The threshold encryption integrations are magnificent." }
               ].map((t, i) => (
                 <motion.div variants={fadeUp} key={i} className="p-8 bg-white border border-gray-100 rounded-[32px] shadow-sm hover:shadow-xl hover:-translate-y-2 transition-all">
                   <p className="text-[15px] text-gray-600 leading-[1.6] mb-6">
-                    "{t.text}"
+                    &ldquo;{t.text}&rdquo;
                   </p>
                   <div className="flex items-center gap-4">
                     <img src={`https://i.pravatar.cc/100?img=${i + 20}`} alt="user" className="size-12 rounded-full object-cover bg-gray-100" />

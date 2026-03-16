@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   resolveName,
   getName,
@@ -11,6 +11,35 @@ import {
 // ── In-memory cache (lives for the tab session) ───────────────────────────────
 const nameCache = new Map<string, string | null>();        // address  → .sui name
 const recordCache = new Map<string, SuiNSNameRecord | null>(); // .sui name → record
+
+function clearNameState(setSuiName: (value: string | null) => void): void {
+  setSuiName(null);
+}
+
+function clearRecordState(setRecord: (value: SuiNSNameRecord | null) => void): void {
+  setRecord(null);
+}
+
+function setInputNeutralState(
+  setResolvedAddress: (value: string | null) => void,
+  setSuiName: (value: string | null) => void,
+  setInputError: (value: string | null) => void,
+): void {
+  setResolvedAddress(null);
+  setSuiName(null);
+  setInputError(null);
+}
+
+function setResolvedFromAddress(
+  setResolvedAddress: (value: string | null) => void,
+  setSuiName: (value: string | null) => void,
+  setInputError: (value: string | null) => void,
+  address: string,
+): void {
+  setResolvedAddress(address);
+  setSuiName(null);
+  setInputError(null);
+}
 
 // ── useSuiNSName ─────────────────────────────────────────────────────────────
 /**
@@ -26,7 +55,7 @@ export function useSuiNSName(address: string | null | undefined) {
 
   useEffect(() => {
     if (!address) {
-      setSuiName(null);
+      clearNameState(setSuiName);
       return;
     }
 
@@ -36,14 +65,17 @@ export function useSuiNSName(address: string | null | undefined) {
       return;
     }
 
-    console.log("[useSuiNSName] fetching for address:", address);
-    setLoading(true);
-    getName(address).then((name) => {
+    const fetchName = async (): Promise<void> => {
+      console.log("[useSuiNSName] fetching for address:", address);
+      setLoading(true);
+      const name = await getName(address);
       console.log("[useSuiNSName] got name:", name, "for address:", address);
       nameCache.set(address, name);
       setSuiName(name);
       setLoading(false);
-    });
+    };
+
+    void fetchName();
   }, [address]);
 
   return { suiName, loading };
@@ -64,7 +96,7 @@ export function useSuiNSRecord(name: string | null | undefined) {
 
   useEffect(() => {
     if (!name) {
-      setRecord(null);
+      clearRecordState(setRecord);
       return;
     }
 
@@ -73,15 +105,21 @@ export function useSuiNSRecord(name: string | null | undefined) {
       return;
     }
 
-    setLoading(true);
-    setError(null);
-    resolveName(name)
-      .then((r) => {
-        recordCache.set(name, r);
-        setRecord(r);
-      })
-      .catch(() => setError("Failed to resolve name"))
-      .finally(() => setLoading(false));
+    const fetchRecord = async (): Promise<void> => {
+      setLoading(true);
+      setError(null);
+      try {
+        const resolved = await resolveName(name);
+        recordCache.set(name, resolved);
+        setRecord(resolved);
+      } catch {
+        setError("Failed to resolve name");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void fetchRecord();
   }, [name]);
 
   return { record, loading, error };
@@ -108,17 +146,13 @@ export function useSuiNSInput(rawInput: string) {
     const trimmed = rawInput.trim();
 
     if (!trimmed) {
-      setResolvedAddress(null);
-      setSuiName(null);
-      setInputError(null);
+      setInputNeutralState(setResolvedAddress, setSuiName, setInputError);
       return;
     }
 
     // Plain Sui address — pass through unchanged
     if (trimmed.startsWith("0x") && !isSuiNSName(trimmed)) {
-      setResolvedAddress(trimmed);
-      setSuiName(null);
-      setInputError(null);
+      setResolvedFromAddress(setResolvedAddress, setSuiName, setInputError, trimmed);
       return;
     }
 
@@ -172,9 +206,7 @@ export function useSuiNSInput(rawInput: string) {
     }
 
     // Neither valid address nor .sui name
-    setResolvedAddress(null);
-    setSuiName(null);
-    setInputError(null);
+    setInputNeutralState(setResolvedAddress, setSuiName, setInputError);
   }, [rawInput]);
 
   return { resolvedAddress, suiName, resolving, inputError };

@@ -109,7 +109,7 @@ export default function InvitePage() {
             <>
               <div className="space-y-1">
                 <h2 className="text-2xl font-black text-[#1a1a1a] tracking-tight">
-                  You're invited!
+                  You&apos;re invited!
                 </h2>
                 <p className="text-sm text-slate-500">
                   Accept to join your team on Tidal.

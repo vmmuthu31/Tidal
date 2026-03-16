@@ -188,7 +188,7 @@ export default function OnboardingPage() {
                   </button>
                 </div>
                 <p className="text-[11px] text-slate-400 leading-relaxed">
-                  This is your ZK-derived wallet address. It's unique to your Google account and lives on-chain.
+                  This is your ZK-derived wallet address. It&apos;s unique to your Google account and lives on-chain.
                 </p>
               </div>
 
@@ -255,7 +255,7 @@ export default function OnboardingPage() {
               </div>
               <h1 className="text-3xl font-black tracking-tight text-[#1a1a1a]">Create your organization</h1>
               <p className="text-sm text-slate-500">
-                Your org is deployed on-chain. You'll need ~0.01 SUI for gas.
+                Your org is deployed on-chain. You&apos;ll need ~0.01 SUI for gas.
               </p>
             </div>
 

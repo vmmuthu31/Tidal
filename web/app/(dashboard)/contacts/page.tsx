@@ -29,14 +29,22 @@ export default function ContactsPage() {
     ? user.orgAdminAddress
     : user?.suiAddress;
 
+  async function loadContacts(address: string): Promise<void> {
+    setLoadingContacts(true);
+    try {
+      const response = await fetch(`/api/contacts?adminAddress=${address}`);
+      const data = (await response.json()) as { contacts?: Contact[] };
+      setContacts(data.contacts ?? []);
+    } catch {
+      setContacts([]);
+    } finally {
+      setLoadingContacts(false);
+    }
+  }
+
   useEffect(() => {
     if (!queryAddress) return;
-    setLoadingContacts(true);
-    fetch(`/api/contacts?adminAddress=${queryAddress}`)
-      .then((r) => r.json())
-      .then((data) => setContacts(data.contacts ?? []))
-      .catch(() => setContacts([]))
-      .finally(() => setLoadingContacts(false));
+    void loadContacts(queryAddress);
   }, [queryAddress]);
 
   const loading = userLoading || loadingContacts;

@@ -263,7 +263,7 @@ export default function OrganizationPage() {
             </div>
             <div>
               <h2 className="text-sm font-bold text-[#0f0f0f]">Send Invite</h2>
-              <p className="text-xs text-slate-500">They'll receive an email with a sign-in link.</p>
+              <p className="text-xs text-slate-500">They&apos;ll receive an email with a sign-in link.</p>
             </div>
           </div>
           <form onSubmit={handleSendInvite} className="space-y-4">
