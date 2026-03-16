@@ -8,6 +8,11 @@ import type {
 } from "discord.js";
 import { sendWebhook } from "./webhook.js";
 import type { CommunityEvent } from "./types.js";
+import {
+  encryptAndUpload,
+  downloadAndDecrypt,
+  isConfigured as isSealConfigured,
+} from "./services/sealService.js";
 
 export async function handleGuildMemberAdd(member: GuildMember): Promise<void> {
   const event: CommunityEvent = {
@@ -79,6 +84,47 @@ export async function handleMessageCreate(message: Message): Promise<void> {
         `Your Discord ID: ${userId}\n` +
         `Username: ${username}`,
     );
+    return;
+  }
+
+  // ── Seal + Walrus commands ──────────────────────────────────────────────
+  if (message.content.startsWith("!encrypt ") && isSealConfigured()) {
+    const text = message.content.slice("!encrypt ".length).trim();
+    if (!text) { await message.reply("Usage: `!encrypt <text>`"); return; }
+    try {
+      await message.reply("🔒 Encrypting and uploading to Walrus…");
+      const data = new TextEncoder().encode(text);
+      const result = await encryptAndUpload(data);
+      await message.reply(
+        `✅ Encrypted & stored on Walrus\n` +
+        `**Blob ID:** \`${result.blobId}\`\n` +
+        `**Encryption ID:** \`${result.encryptionId}\`\n` +
+        `**Sui Ref:** \`${result.suiRef}\``
+      );
+    } catch (err) {
+      console.error("Encrypt command failed:", err);
+      await message.reply(`❌ Encryption failed: ${err instanceof Error ? err.message : String(err)}`);
+    }
+    return;
+  }
+
+  if (message.content.startsWith("!decrypt ") && isSealConfigured()) {
+    const args = message.content.slice("!decrypt ".length).trim().split(/\s+/);
+    if (args.length < 2) {
+      await message.reply("Usage: `!decrypt <blobId> <resourceObjectId>`");
+      return;
+    }
+    const [blobId, resourceId] = args;
+    try {
+      await message.reply("🔓 Downloading and decrypting…");
+      const decrypted = await downloadAndDecrypt(blobId, resourceId);
+      const text = new TextDecoder().decode(decrypted);
+      const preview = text.length > 1500 ? text.slice(0, 1500) + "…" : text;
+      await message.reply(`✅ Decrypted content:\n\`\`\`\n${preview}\n\`\`\``);
+    } catch (err) {
+      console.error("Decrypt command failed:", err);
+      await message.reply(`❌ Decryption failed: ${err instanceof Error ? err.message : String(err)}`);
+    }
     return;
   }
 

@@ -8,6 +8,14 @@ import {
 
 dotenv.config();
 
+// Log Seal/Walrus integration status at startup
+try {
+  const { assertConfigured } = await import("./services/suiClient.js");
+  assertConfigured();
+} catch {
+  console.warn("⚠️  Seal/Walrus integration unavailable (missing deps or config)");
+}
+
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
