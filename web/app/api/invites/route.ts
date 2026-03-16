@@ -63,9 +63,9 @@ export async function POST(req: NextRequest) {
     // Send invite email via NodeMailer
     const transporter = createTransporter();
     await transporter.sendMail({
-      from: `"Sui CRM" <${FROM}>`,
+      from: `"Tidal" <${FROM}>`,
       to: inviteeEmail,
-      subject: `${adminName} invited you to join ${orgName} on Sui CRM`,
+      subject: `${adminName} invited you to join ${orgName} on Tidal`,
       html: buildInviteEmail({ inviteeName, adminName, orgName, inviteUrl }),
     });
 
@@ -159,7 +159,7 @@ function buildInviteEmail({
           <div style="display:inline-flex;align-items:center;justify-content:center;width:48px;height:48px;background:#fff;border-radius:14px;margin-bottom:12px">
             <span style="font-size:22px;font-weight:900;color:#1a1a1a">S</span>
           </div>
-          <p style="margin:0;font-size:20px;font-weight:900;color:#fff;letter-spacing:-0.5px">SUI CRM</p>
+          <p style="margin:0;font-size:20px;font-weight:900;color:#fff;letter-spacing:-0.5px">Tidal</p>
           <p style="margin:6px 0 0;font-size:12px;color:#94a3b8">Encrypted, on-chain customer relations</p>
         </td></tr>
 
@@ -170,7 +170,7 @@ function buildInviteEmail({
           </h1>
           <p style="margin:0 0 28px;font-size:15px;color:#64748b;line-height:1.6">
             <strong style="color:#1a1a1a">${adminName}</strong> has invited you to join
-            <strong style="color:#1a1a1a">${orgName}</strong> as a team member on Sui CRM.
+            <strong style="color:#1a1a1a">${orgName}</strong> as a team member on Tidal.
           </p>
 
           <!-- CTA -->
@@ -186,7 +186,7 @@ function buildInviteEmail({
           <!-- Info box -->
           <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;border-radius:16px;border:1px solid #e2e8f0;margin-bottom:28px">
             <tr><td style="padding:20px 24px">
-              <p style="margin:0 0 8px;font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:1px">What is Sui CRM?</p>
+              <p style="margin:0 0 8px;font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:1px">What is Tidal?</p>
               <p style="margin:0;font-size:13px;color:#475569;line-height:1.6">
                 A self-custodial CRM built on the Sui blockchain. You'll sign in with your Google account —
                 no password required. Your identity is secured by zero-knowledge proofs.

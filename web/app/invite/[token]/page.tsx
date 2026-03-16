@@ -77,7 +77,7 @@ export default function InvitePage() {
           <div className="inline-flex items-center justify-center size-16 rounded-3xl bg-[#1a1a1a] shadow-2xl shadow-black/20 mx-auto">
             <ShieldCheck className="size-8 text-white" />
           </div>
-          <h1 className="text-3xl font-black tracking-tight text-[#1a1a1a]">SUI CRM</h1>
+          <h1 className="text-3xl font-black tracking-tight text-[#1a1a1a]">Tidal</h1>
         </div>
 
         <div className="bg-white rounded-[40px] shadow-2xl shadow-black/5 border border-slate-100 p-10 space-y-6">
@@ -112,7 +112,7 @@ export default function InvitePage() {
                   You're invited!
                 </h2>
                 <p className="text-sm text-slate-500">
-                  Accept to join your team on Sui CRM.
+                  Accept to join your team on Tidal.
                 </p>
               </div>
 

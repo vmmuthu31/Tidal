@@ -70,11 +70,11 @@ export function AppSidebar() {
       <SidebarHeader className="p-6 pb-8">
         <Link href="/dashboard" className="flex items-center gap-3 group">
           <div className="size-11 rounded-2xl bg-[#1a1a1a] flex items-center justify-center text-white font-black text-2xl shadow-xl shadow-black/20 group-hover:scale-105 transition-transform duration-500">
-            S
+            T
           </div>
           <div className="flex flex-col">
             <span className="font-black text-lg tracking-tight text-[#1a1a1a] leading-none mb-1">
-              SUI CRM
+              Tidal
             </span>
             <div className="flex items-center gap-1.5 font-bold text-[10px] text-slate-400 uppercase tracking-widest">
               <div className="size-1.5 bg-emerald-500 rounded-full animate-pulse" />
