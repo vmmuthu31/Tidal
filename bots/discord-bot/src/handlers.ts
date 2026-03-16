@@ -6,14 +6,13 @@ import type {
   PartialMessageReaction,
   PartialUser,
 } from "discord.js";
-import { sendWebhook } from "./webhook.js";
 import type { CommunityEvent } from "./types.js";
 import {
   encryptAndUpload,
   downloadAndDecrypt,
   isConfigured as isSealConfigured,
 } from "./services/sealService.js";
-import { handleCampaignCommand } from "./services/campaignHandler.js";
+import { handleCampaignCommand } from "./handlers/campaignHandler.js";
 import { enqueueCommunityEvent } from "./services/eventBatcher.js";
 
 export async function handleGuildMemberAdd(member: GuildMember): Promise<void> {

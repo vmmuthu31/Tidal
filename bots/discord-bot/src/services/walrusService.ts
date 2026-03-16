@@ -34,7 +34,7 @@ export async function uploadBlob(
       const url = `${pub}/v1/blobs?epochs=${NUM_EPOCH}`;
       const res = await fetch(url, {
         method: "PUT",
-        body: data,
+        body: Buffer.from(data),
         headers: { "Content-Type": "application/octet-stream" },
         signal: AbortSignal.timeout(30_000),
       });

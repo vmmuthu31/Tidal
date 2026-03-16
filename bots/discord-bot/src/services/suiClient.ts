@@ -1,4 +1,4 @@
-import { SuiClient, getFullnodeUrl } from "@mysten/sui/client";
+import { SuiJsonRpcClient, getJsonRpcFullnodeUrl } from "@mysten/sui/jsonRpc";
 import { Ed25519Keypair } from "@mysten/sui/keypairs/ed25519";
 import { decodeSuiPrivateKey } from "@mysten/sui/cryptography";
 
@@ -6,9 +6,12 @@ import { decodeSuiPrivateKey } from "@mysten/sui/cryptography";
 // Sui client & bot keypair — initialised from environment variables
 // ---------------------------------------------------------------------------
 
-const NETWORK = (process.env.SUI_NETWORK as "testnet" | "mainnet" | "devnet") || "testnet";
+const NETWORK = (process.env.SUI_NETWORK as "testnet" | "mainnet" | "devnet" | "localnet") || "testnet";
 
-export const suiClient = new SuiClient({ url: getFullnodeUrl(NETWORK) });
+export const suiClient = new SuiJsonRpcClient({
+  network: NETWORK,
+  url: getJsonRpcFullnodeUrl(NETWORK),
+});
 
 /**
  * Derive the bot's Ed25519 keypair from `SUI_PRIVATE_KEY`.
@@ -19,8 +22,8 @@ function loadKeypair(): Ed25519Keypair {
   if (!raw) throw new Error("SUI_PRIVATE_KEY env var is required for Seal/Walrus integration");
 
   // Bech32 `suiprivkey1…` format
-  const { schema, secretKey } = decodeSuiPrivateKey(raw);
-  if (schema !== "ED25519") throw new Error(`Unsupported key scheme: ${schema}. Only ED25519 is supported.`);
+  const { scheme, secretKey } = decodeSuiPrivateKey(raw);
+  if (scheme !== "ED25519") throw new Error(`Unsupported key scheme: ${scheme}. Only ED25519 is supported.`);
   return Ed25519Keypair.fromSecretKey(secretKey);
 }
 

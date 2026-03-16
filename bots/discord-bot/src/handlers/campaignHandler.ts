@@ -1,25 +1,16 @@
 import type {
   Message,
-  SlashCommandBuilder,
-  CommandInteraction,
-  MessageFlags,
 } from "discord.js";
 import {
   EmbedBuilder,
-  ChannelType,
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
 } from "discord.js";
 import {
   getCampaignStats,
-  formatCampaignStatsEmbed,
-  formatCampaignInfo,
-  findCampaignMessages,
-  calculateCampaignPerformance,
-  getActiveCampaigns,
-} from "./campaignService.js";
-import type { Campaign, CampaignStats } from "../types.js";
+} from "../services/campaignService.js";
+import type { Campaign } from "../types.js";
 
 /**
  * Campaign Commands Handler
@@ -125,7 +116,7 @@ async function sendCampaignStats(
     if (stats.reactions.length > 0) {
       const topReactions = stats.reactions
         .slice(0, 5)
-        .map((r) => `${r.emoji} (${r.count})`)
+        .map((r: { emoji: string; count: number }) => `${r.emoji} (${r.count})`)
         .join("\n");
       embed.addFields({
         name: "🔝 Top Reactions",
@@ -253,10 +244,7 @@ async function announceCampaign(
   }
 
   try {
-    // In a real implementation, fetch from SurrealDB
-    // const campaign = await db.select(`campaign:${campaignId}`).catch(() => null)
-
-    const campaign: Campaign | null = null;
+    const campaign = await getCampaignById(campaignId);
 
     if (!campaign) {
       await message.reply(`❌ Campaign \`${campaignId}\` not found`);
@@ -286,6 +274,10 @@ async function announceCampaign(
       `❌ Failed to announce campaign: ${error instanceof Error ? error.message : "Unknown error"}`,
     );
   }
+}
+
+async function getCampaignById(_campaignId: string): Promise<Campaign | null> {
+  return null;
 }
 
 async function showCampaignLeaderboard(
@@ -318,7 +310,10 @@ async function showCampaignLeaderboard(
       const leaderboard = stats.top_participants
         .slice(0, 10)
         .map(
-          (participant, index) =>
+          (
+            participant: { user_id: string; interaction_count: number },
+            index: number,
+          ) =>
             `${index + 1}. <@${participant.user_id}> - ${participant.interaction_count} interactions`,
         )
         .join("\n");
