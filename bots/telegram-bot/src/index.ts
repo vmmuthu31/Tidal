@@ -24,8 +24,8 @@ bot.on("callback_query", async (ctx) => {
 
 bot.command("start", async (ctx) => {
   await ctx.reply(
-    "Welcome to the CRM Bot! 🎉\n\n" +
-      "This bot tracks community engagement for the Decentralized CRM.\n\n" +
+    "Welcome to the Tidal Bot! 🎉\n\n" +
+      "This bot tracks community engagement for Tidal CRM.\n\n" +
       "Commands:\n" +
       "/link - Link your wallet to your Telegram account\n" +
       "/campaign <id> - Interact with a campaign",

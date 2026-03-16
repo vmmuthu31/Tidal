@@ -253,7 +253,7 @@ export default function OrganizationSettingsPage() {
               </div>
               <div className="size-10 rounded-xl bg-slate-200" />
             </div>
-            <p className="mt-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-center">Coming Soon to SUI CRM</p>
+            <p className="mt-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-center">Coming Soon to Tidal</p>
           </CardContent>
         </Card>
       </div>

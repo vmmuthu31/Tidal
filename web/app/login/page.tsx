@@ -59,7 +59,7 @@ export default function LoginPage() {
             <img src="/logo.png" alt="SUI CRM" className="w-[115%] h-[115%] object-cover" />
           </div>
           <div>
-            <h1 className="text-4xl font-black tracking-tight text-[#1a1a1a]">SUI CRM</h1>
+            <h1 className="text-4xl font-black tracking-tight text-[#1a1a1a]">Tidal</h1>
             <p className="text-sm text-slate-500 font-medium mt-1">
               Encrypted, on-chain customer relations
             </p>

@@ -19,8 +19,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SUI CRM",
-  description: "CRM on Sui with Seal encryption and Walrus storage",
+  title: "Tidal",
+  description: "Privacy-first Web3 CRM with Seal encryption and Walrus storage",
 };
 
 export default function RootLayout({

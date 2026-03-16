@@ -76,7 +76,7 @@ export default function Home() {
               <div className="relative size-10 flex items-center justify-center rounded-2xl shadow-md overflow-hidden bg-[#0A0F1C]">
                 <img src="/logo.png" alt="SUI CRM Logo" className="w-[115%] h-[115%] object-cover" />
               </div>
-              <span className="font-extrabold text-[#1A1A1A] tracking-[-0.03em] text-[22px] cursor-pointer">SUI CRM</span>
+              <span className="font-extrabold text-[#1A1A1A] tracking-[-0.03em] text-[22px] cursor-pointer">Tidal</span>
             </div>
 
             {/* Nav Links */}
@@ -119,11 +119,11 @@ export default function Home() {
             </motion.div>
 
             <motion.h1 variants={fadeUp} className="text-5xl sm:text-7xl lg:text-[76px] font-bold tracking-[-0.04em] text-[#1A1A1A] leading-[1.05] max-w-[850px]">
-              Get a Grip on Your Business <br className="hidden md:block" /> Future with SUI CRM
+              Get a Grip on Your Business <br className="hidden md:block" /> Future with Tidal
             </motion.h1>
 
             <motion.p variants={fadeUp} className="mt-8 text-[19px] text-gray-500 max-w-[650px] mx-auto leading-[1.6] font-medium">
-              SUI CRM is the first Web3-native CRM that stores contact profiles, notes, and files
+              Tidal is the first Web3-native CRM that stores contact profiles, notes, and files
               directly on the Sui blockchain — secured by threshold encryption so only your team can read them.
             </motion.p>
 
@@ -198,7 +198,7 @@ export default function Home() {
             <motion.h3 variants={fadeUp} className="text-[26px] font-bold tracking-tight text-[#1A1A1A]">Integrated natively within the Sui Ecosystem</motion.h3>
             <motion.p variants={fadeUp} className="text-gray-500 text-[15px] mt-3 mb-10">We utilize cutting-edge protocols to secure your organization's data.</motion.p>
             <motion.div variants={fadeUp} className="flex flex-wrap justify-center items-center gap-8 md:gap-16 opacity-50 grayscale hover:grayscale-0 transition-all duration-500">
-              {["zkLogin", "Navi", "Walrus Storage", "Enoki Gas Pool", "SuiNS"].map((name, i) => (
+              {["zkLogin", "Walrus Storage", "Enoki Gas Pool", "SuiNS", "Seal"].map((name, i) => (
                 <div key={i} className="flex items-center gap-2 text-[#1A1A1A] font-bold text-xl hover:scale-110 transition-transform cursor-pointer">
                   <div className="size-8 rounded-lg bg-gray-200" />
                   {name}
@@ -219,7 +219,7 @@ export default function Home() {
         >
           <motion.div variants={fadeUp} className="max-w-6xl mx-auto bg-[#F8F9FA] rounded-[40px] p-12 lg:p-20 text-center relative overflow-hidden group">
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-[#1A1A1A] mb-4">Your data is yours. Cryptographically.</h2>
-            <p className="text-gray-500 text-[16px]">Traditional CRMs store your customer data in their database and grant you access.<br />SUI CRM flips this — the data lives on-chain and access is gated by cryptographic proofs.</p>
+            <p className="text-gray-500 text-[16px]">Traditional CRMs store your customer data in their database and grant you access.<br />Tidal flips this — the data lives on-chain and access is gated by cryptographic proofs.</p>
 
             <motion.div variants={fadeUp} className="mt-16 relative w-full h-[400px] max-w-4xl mx-auto opacity-90 transition-transform duration-700 group-hover:scale-[1.02]">
               <div className="absolute inset-0 bg-white border border-gray-100 rounded-[32px] overflow-hidden p-8 flex flex-col items-center justify-center gap-8 shadow-sm">
@@ -347,7 +347,7 @@ export default function Home() {
           <div className="max-w-6xl mx-auto">
             <motion.div variants={fadeUp} className="text-center mb-16">
               <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-[#1A1A1A]">Fully Open Source and Free</h2>
-              <p className="text-gray-500 text-[16px] mt-4">SUI CRM is open source. Run it locally or use our hosted testnet gateway.</p>
+              <p className="text-gray-500 text-[16px] mt-4">Tidal is open source. Run it locally or use our hosted testnet gateway.</p>
             </motion.div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -388,11 +388,11 @@ export default function Home() {
           className="py-24 px-6 border-t border-black/5 relative z-10 bg-white"
         >
           <div className="max-w-6xl mx-auto text-center">
-            <motion.h2 variants={fadeUp} className="text-4xl md:text-5xl font-bold tracking-tight text-[#1A1A1A] mb-16">What builders say about SUI CRM</motion.h2>
+            <motion.h2 variants={fadeUp} className="text-4xl md:text-5xl font-bold tracking-tight text-[#1A1A1A] mb-16">What builders say about Tidal</motion.h2>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
               {[
-                { name: "Alex Chen", role: "Founder, Web3 Startup", text: "SUI CRM showed us what's actually possible. Using Walrus for file storage instead of AWS saves us tons of money." },
+                { name: "Alex Chen", role: "Founder, Web3 Startup", text: "Tidal showed us what's actually possible. Using Walrus for file storage instead of AWS saves us tons of money." },
                 { name: "Sarah Jenkins", role: "Sales Director", text: "The zero-knowledge login means my sales reps don't have to deal with seed phrases to interact on chain." },
                 { name: "Mike Rostova", role: "DAOs Lead", text: "Finally an organizational tool prioritizing privacy. The threshold encryption integrations are magnificent." }
               ].map((t, i) => (
@@ -437,7 +437,7 @@ export default function Home() {
         <footer className="pt-20 pb-10 px-6 border-t border-black/5 relative overflow-hidden bg-white z-10">
           {/* Giant Background Text */}
           <div className="absolute inset-x-0 bottom-[-50px] text-center pointer-events-none opacity-[0.03] select-none flex justify-center">
-            <span className="text-[25vw] font-black tracking-tighter leading-none block whitespace-nowrap">SUI CRM</span>
+            <span className="text-[25vw] font-black tracking-tighter leading-none block whitespace-nowrap">Tidal</span>
           </div>
 
           <div className="max-w-7xl mx-auto relative z-10">
@@ -495,7 +495,7 @@ export default function Home() {
             </div>
 
             <div className="flex flex-col md:flex-row items-center justify-between pt-8 border-t border-black/5 text-[14px] text-gray-400 font-medium">
-              <p>© 2024 SUI CRM Open Sourced.</p>
+              <p>© 2024 Tidal Open Sourced.</p>
               <div className="flex gap-4 mt-4 md:mt-0">
                 <a href="#" className="hover:text-black transition-colors">Privacy Policy</a>
                 <a href="#" className="hover:text-black transition-colors">Terms and Conditions</a>

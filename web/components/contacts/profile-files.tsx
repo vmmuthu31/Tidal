@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ACCESS_LEVEL_OPTIONS, type OrgRole } from "@/lib/types/crm";
-import CONTRACT_CONFIG from "@/lib/config/contracts";
+import CONTRACT_CONFIG, { getCurrentPackageId } from "@/lib/config/contracts";
 import { crmDecryptionService, type ResourceMetadata } from "@/lib/services/decryptionService";
 
 interface ProfileFilesProps {
@@ -96,8 +96,8 @@ export function ProfileFiles({ profileId, onchainObjectId }: ProfileFilesProps) 
       const [resourceObj] = tx.moveCall({
         target: CONTRACT_CONFIG.FUNCTIONS.ACCESS_CONTROL.CREATE_ENCRYPTED_RESOURCE,
         arguments: [
-          tx.pure.address(address),
-          tx.pure.address(address),
+          tx.pure.address(profileId),
+          tx.pure.address(orgRegistryId),
           tx.pure.u8(CONTRACT_CONFIG.RESOURCE_TYPES.FILE),
           tx.pure.vector("u8", new TextEncoder().encode(result.blobId)),
           tx.pure.vector("u8", new TextEncoder().encode(cleanEncId)),
@@ -105,7 +105,13 @@ export function ProfileFiles({ profileId, onchainObjectId }: ProfileFilesProps) 
           tx.pure.u64(Date.now()),
         ],
       });
-      tx.transferObjects([resourceObj], tx.pure.address(address));
+      // Freeze the resource so ANY org member can reference it in seal_approve.
+      // transferObjects makes it owned (only admin can use) → members get 403.
+      tx.moveCall({
+        target: '0x2::transfer::public_freeze_object',
+        typeArguments: [`${getCurrentPackageId()}::crm_access_control::EncryptedResource`],
+        arguments: [resourceObj],
+      });
 
       const res = await signAndExecuteTransaction({ transaction: tx });
 

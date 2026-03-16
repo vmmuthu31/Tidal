@@ -157,6 +157,8 @@ export const CRM_SPONSORED_TARGETS: string[] = [
   CONTRACT_FUNCTIONS.ACCESS_CONTROL.CREATE_ENCRYPTED_RESOURCE,
   CONTRACT_FUNCTIONS.PROFILE.CREATE_PROFILE,
   CONTRACT_FUNCTIONS.INTERACTION.LOG_INTERACTION,
+  // EncryptedResource is frozen (immutable) so any org member can reference it in seal_approve
+  '0x2::transfer::public_freeze_object',
 ];
 
 // =============================================================================
