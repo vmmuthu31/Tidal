@@ -4,7 +4,9 @@ import {
   handleGuildMemberAdd,
   handleMessageReactionAdd,
   handleMessageCreate,
-} from "./handlers";
+} from "./handlers.js";
+import { initializeCampaignTracking } from "./services/campaignService.js";
+import { startEventBatcher } from "./services/eventBatcher.js";
 
 dotenv.config();
 
@@ -29,7 +31,12 @@ const client = new Client({
 
 client.once(Events.ClientReady, (c) => {
   console.log(`✅ Discord bot ready! Logged in as ${c.user.tag}`);
+  console.log("📊 Campaign tracking initialized");
 });
+
+// Initialize campaign tracking
+initializeCampaignTracking(client);
+startEventBatcher();
 
 client.on(Events.GuildMemberAdd, async (member) => {
   await handleGuildMemberAdd(member);

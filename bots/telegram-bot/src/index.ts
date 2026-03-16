@@ -5,10 +5,12 @@ import {
   handleMessage,
   handleCallbackQuery,
 } from "./handlers";
+import { startEventBatcher } from "./services/eventBatcher.js";
 
 dotenv.config();
 
 const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN!);
+startEventBatcher();
 
 bot.on("new_chat_members", async (ctx) => {
   await handleNewChatMembers(ctx);

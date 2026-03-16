@@ -13,6 +13,8 @@ import {
   downloadAndDecrypt,
   isConfigured as isSealConfigured,
 } from "./services/sealService.js";
+import { handleCampaignCommand } from "./services/campaignHandler.js";
+import { enqueueCommunityEvent } from "./services/eventBatcher.js";
 
 export async function handleGuildMemberAdd(member: GuildMember): Promise<void> {
   const event: CommunityEvent = {
@@ -28,7 +30,7 @@ export async function handleGuildMemberAdd(member: GuildMember): Promise<void> {
     },
   };
 
-  await sendWebhook(event);
+  await enqueueCommunityEvent(event);
 }
 
 export async function handleMessageReactionAdd(
@@ -63,7 +65,7 @@ export async function handleMessageReactionAdd(
     },
   };
 
-  await sendWebhook(event);
+  await enqueueCommunityEvent(event);
 }
 
 export async function handleMessageCreate(message: Message): Promise<void> {
@@ -84,6 +86,15 @@ export async function handleMessageCreate(message: Message): Promise<void> {
         `Your Discord ID: ${userId}\n` +
         `Username: ${username}`,
     );
+    return;
+  }
+
+  // ── Campaign commands ──────────────────────────────────────────────
+  if (message.content.startsWith("!campaign")) {
+    const parts = message.content.split(/\s+/);
+    const command = parts[1];
+    const args = parts.slice(2);
+    await handleCampaignCommand(message, `campaign-${command || 'help'}`, args);
     return;
   }
 
@@ -153,7 +164,7 @@ export async function handleMessageCreate(message: Message): Promise<void> {
     },
   };
 
-  await sendWebhook(event);
+  await enqueueCommunityEvent(event);
 }
 
 function extractCampaignId(content: string): string | undefined {

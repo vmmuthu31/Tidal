@@ -4,10 +4,14 @@ import {
   TweetV2SingleStreamResult,
 } from "twitter-api-v2";
 import dotenv from "dotenv";
-import { sendWebhook } from "./webhook.js";
 import type { CommunityEvent, TwitterConfig } from "./types.js";
+import {
+  enqueueCommunityEvent,
+  startEventBatcher,
+} from "./services/eventBatcher.js";
 
 dotenv.config();
+startEventBatcher();
 
 const config: TwitterConfig = {
   apiKey: process.env.TWITTER_API_KEY!,
@@ -78,7 +82,7 @@ async function handleTweet(tweet: TweetV2SingleStreamResult) {
     },
   };
 
-  await sendWebhook(event);
+  await enqueueCommunityEvent(event);
 }
 
 function extractCampaignId(text: string): string | undefined {

@@ -1,9 +1,13 @@
 import { getSSLHubRpcClient, Message } from "@farcaster/hub-nodejs";
 import dotenv from "dotenv";
-import { sendWebhook } from "./webhook.js";
 import type { CommunityEvent } from "./types.js";
+import {
+  enqueueCommunityEvent,
+  startEventBatcher,
+} from "./services/eventBatcher.js";
 
 dotenv.config();
+startEventBatcher();
 
 const HUB_URL = process.env.FARCASTER_HUB_URL || "hub.farcaster.xyz:2281";
 const trackedChannels = (process.env.TRACKED_CHANNELS || "")
@@ -50,7 +54,7 @@ async function handleCast(message: Message) {
     },
   };
 
-  await sendWebhook(event);
+  await enqueueCommunityEvent(event);
 }
 
 async function handleReaction(message: Message) {
@@ -75,7 +79,7 @@ async function handleReaction(message: Message) {
     },
   };
 
-  await sendWebhook(event);
+  await enqueueCommunityEvent(event);
 }
 
 async function handleFollow(message: Message) {
@@ -100,7 +104,7 @@ async function handleFollow(message: Message) {
     },
   };
 
-  await sendWebhook(event);
+  await enqueueCommunityEvent(event);
 }
 
 function extractCampaignId(text: string): string | undefined {

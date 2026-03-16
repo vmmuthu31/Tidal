@@ -1,6 +1,6 @@
 import type { Context } from "telegraf";
-import { sendWebhook } from "./webhook.js";
 import type { CommunityEvent } from "./types.js";
+import { enqueueCommunityEvent } from "./services/eventBatcher.js";
 
 export async function handleNewChatMembers(ctx: Context): Promise<void> {
   if (!("new_chat_members" in ctx.message!)) return;
@@ -24,7 +24,7 @@ export async function handleNewChatMembers(ctx: Context): Promise<void> {
       },
     };
 
-    await sendWebhook(event);
+    await enqueueCommunityEvent(event);
   }
 }
 
@@ -56,7 +56,7 @@ export async function handleMessage(ctx: Context): Promise<void> {
     },
   };
 
-  await sendWebhook(event);
+  await enqueueCommunityEvent(event);
 }
 
 export async function handleCallbackQuery(ctx: Context): Promise<void> {
@@ -85,7 +85,7 @@ export async function handleCallbackQuery(ctx: Context): Promise<void> {
     },
   };
 
-  await sendWebhook(event);
+  await enqueueCommunityEvent(event);
   await ctx.answerCbQuery("✅ Participation recorded!");
 }
 
