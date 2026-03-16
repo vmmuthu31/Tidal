@@ -20,6 +20,20 @@ function clearRecordState(setRecord: (value: SuiNSNameRecord | null) => void): v
   setRecord(null);
 }
 
+function setCachedNameState(
+  setSuiName: (value: string | null) => void,
+  cachedName: string | null,
+): void {
+  setSuiName(cachedName);
+}
+
+function setCachedRecordState(
+  setRecord: (value: SuiNSNameRecord | null) => void,
+  cachedRecord: SuiNSNameRecord | null,
+): void {
+  setRecord(cachedRecord);
+}
+
 function setInputNeutralState(
   setResolvedAddress: (value: string | null) => void,
   setSuiName: (value: string | null) => void,
@@ -39,6 +53,32 @@ function setResolvedFromAddress(
   setResolvedAddress(address);
   setSuiName(null);
   setInputError(null);
+}
+
+function beginResolvingState(
+  setResolving: (value: boolean) => void,
+  setInputError: (value: string | null) => void,
+): void {
+  setResolving(true);
+  setInputError(null);
+}
+
+function setCachedResolvedState(
+  setResolvedAddress: (value: string | null) => void,
+  setSuiName: (value: string | null) => void,
+  setInputError: (value: string | null) => void,
+  setResolving: (value: boolean) => void,
+  cachedAddress: string | null,
+  resolvedName: string,
+): void {
+  if (cachedAddress) {
+    setResolvedAddress(cachedAddress);
+    setSuiName(resolvedName);
+  } else {
+    setResolvedAddress(null);
+    setInputError(`"${resolvedName}" has no target address`);
+  }
+  setResolving(false);
 }
 
 // ── useSuiNSName ─────────────────────────────────────────────────────────────
@@ -61,7 +101,7 @@ export function useSuiNSName(address: string | null | undefined) {
 
     // Return cached result immediately
     if (nameCache.has(address)) {
-      setSuiName(nameCache.get(address) ?? null);
+      setCachedNameState(setSuiName, nameCache.get(address) ?? null);
       return;
     }
 
@@ -101,7 +141,7 @@ export function useSuiNSRecord(name: string | null | undefined) {
     }
 
     if (recordCache.has(name)) {
-      setRecord(recordCache.get(name) ?? null);
+      setCachedRecordState(setRecord, recordCache.get(name) ?? null);
       return;
     }
 
@@ -159,20 +199,19 @@ export function useSuiNSInput(rawInput: string) {
     // .sui name — resolve after debounce
     if (isSuiNSName(trimmed)) {
       if (debounceRef.current) clearTimeout(debounceRef.current);
-      setResolving(true);
-      setInputError(null);
+      beginResolvingState(setResolving, setInputError);
 
       // Check cache first
       if (recordCache.has(trimmed)) {
         const cached = recordCache.get(trimmed);
-        if (cached?.address) {
-          setResolvedAddress(cached.address);
-          setSuiName(trimmed);
-        } else {
-          setResolvedAddress(null);
-          setInputError(`"${trimmed}" has no target address`);
-        }
-        setResolving(false);
+        setCachedResolvedState(
+          setResolvedAddress,
+          setSuiName,
+          setInputError,
+          setResolving,
+          cached?.address ?? null,
+          trimmed,
+        );
         return;
       }
 

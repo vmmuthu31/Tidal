@@ -7,7 +7,6 @@ import {
   Users,
   Building2,
   ExternalLink,
-  ChevronRight,
   Sparkles,
   ShieldCheck,
   Zap,

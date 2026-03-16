@@ -30,7 +30,7 @@ interface FileMeta {
   resource?: ResourceMetadata;
 }
 
-export function ProfileFiles({ profileId, onchainObjectId }: ProfileFilesProps) {
+export function ProfileFiles({ profileId }: ProfileFilesProps) {
   const { address } = useUnifiedAccount();
   const { execute: signAndExecuteTransaction } = useUnifiedTransaction();
   const suiClient = useSuiClient();
