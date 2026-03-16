@@ -1,8 +1,8 @@
-# 📚 Documentation Index - Sui CRM
+# Documentation Index - Tidal
 
-Welcome to the Sui CRM documentation! This guide will help you understand the complete system.
+Welcome to the Tidal documentation! This guide will help you understand the complete system.
 
-## 🎯 Start Here
+## Start Here
 
 If you're new to the project, read these in order:
 
@@ -10,7 +10,7 @@ If you're new to the project, read these in order:
 2. **[USER_FLOW.md](./USER_FLOW.md)** - Step-by-step user journeys
 3. **[ENCRYPTION_FLOW_DETAILED.md](./ENCRYPTION_FLOW_DETAILED.md)** - Deep dive into encryption/decryption
 
-## 📖 Core Documentation
+## Core Documentation
 
 ### Architecture & Design
 - **[SYSTEM_ARCHITECTURE.md](./SYSTEM_ARCHITECTURE.md)**
@@ -43,11 +43,10 @@ If you're new to the project, read these in order:
   - Integration with Walrus
   - Code examples
 
-## 🛠️ Developer Guides
+## Developer Guides
 
 ### Configuration & Setup
 - **[CONFIG_SERVICES_UPDATE.md](./CONFIG_SERVICES_UPDATE.md)**
-  - Migration from DID to CRM
   - Configuration file changes
   - Service updates
   - Integration examples
@@ -62,20 +61,20 @@ If you're new to the project, read these in order:
   - Common code patterns
   - Environment variables
 
-## 📂 Documentation Structure
+## Documentation Structure
 
 ```
 docs/
 ├── README.md (this file)
-├── SYSTEM_ARCHITECTURE.md      # 🏗️ System overview
-├── USER_FLOW.md                # 👤 User journeys
-├── ENCRYPTION_FLOW_DETAILED.md # 🔐 Encryption deep dive
-├── SEAL_ACCESS_CONTROL.md      # 🛡️ Access control
-├── CONFIG_SERVICES_UPDATE.md   # ⚙️ Configuration guide
-└── QUICK_REFERENCE.md          # ⚡ Quick reference
+├── SYSTEM_ARCHITECTURE.md      # System overview
+├── USER_FLOW.md                # User journeys
+├── ENCRYPTION_FLOW_DETAILED.md # Encryption deep dive
+├── SEAL_ACCESS_CONTROL.md      # Access control
+├── CONFIG_SERVICES_UPDATE.md   # Configuration guide
+└── QUICK_REFERENCE.md          # Quick reference
 ```
 
-## 🎓 Learning Paths
+## Learning Paths
 
 ### For Product Managers
 1. Read [USER_FLOW.md](./USER_FLOW.md) - Understand user experience
@@ -97,7 +96,7 @@ docs/
 2. Read [CONFIG_SERVICES_UPDATE.md](./CONFIG_SERVICES_UPDATE.md) - Understand API endpoints
 3. Read [SEAL_ACCESS_CONTROL.md](./SEAL_ACCESS_CONTROL.md) - Understand events to index
 
-## 🔑 Key Concepts
+## Key Concepts
 
 ### What is Seal?
 Seal is a threshold encryption protocol that enables:
@@ -120,7 +119,7 @@ Sui is a Layer 1 blockchain that offers:
 - **Parallel execution** - High throughput
 - **Low latency** - Fast finality
 
-## 🚀 Quick Start
+## Quick Start
 
 ### 1. Set Up Environment
 ```bash
@@ -160,9 +159,9 @@ npm run dev
 4. Add encrypted note
 5. Try to decrypt as different roles
 
-## 📊 Use Cases
+## Use Cases
 
-### 1. Community → Onchain Conversion Tracking
+### 1. Community to Onchain Conversion Tracking
 **Scenario:** Track Discord users who mint NFTs
 
 **Flow:**
@@ -192,31 +191,31 @@ npm run dev
 4. Add strategy notes (encrypted - Managers+)
 5. Upload partnership agreement (encrypted - Admins only)
 
-## 🔒 Security Best Practices
+## Security Best Practices
 
 ### For Users
-- ✅ Always verify you're on the correct domain
-- ✅ Review transaction details before signing
-- ✅ Use hardware wallet for high-value operations
-- ✅ Set appropriate access levels for sensitive data
-- ✅ Regularly review team member permissions
+- Always verify you're on the correct domain
+- Review transaction details before signing
+- Use hardware wallet for high-value operations
+- Set appropriate access levels for sensitive data
+- Regularly review team member permissions
 
 ### For Developers
-- ✅ Never log decrypted data
-- ✅ Clear session keys after use
-- ✅ Validate all user inputs
-- ✅ Use environment variables for secrets
-- ✅ Implement rate limiting on API endpoints
-- ✅ Audit smart contracts before deployment
+- Never log decrypted data
+- Clear session keys after use
+- Validate all user inputs
+- Use environment variables for secrets
+- Implement rate limiting on API endpoints
+- Audit smart contracts before deployment
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
 ### Encryption Fails
 **Problem:** `encryptAndUploadResource` returns error
 
 **Solutions:**
 1. Check Walrus publishers are accessible
-2. Verify Seal key servers are online
+2. Verify Seal key servers are online (4 servers, threshold of 2)
 3. Ensure org registry ID is correct
 4. Check file size limits
 
@@ -224,21 +223,21 @@ npm run dev
 **Problem:** `downloadAndDecryptResources` returns "Access Denied"
 
 **Solutions:**
-1. Verify user has sufficient role
-2. Check if user is org member
+1. Verify user has sufficient role (Viewer=1, Manager=2, Admin=3)
+2. Check if user is registered in OrgAccessRegistry
 3. Ensure session key is valid
-4. Verify resource exists onchain
+4. Verify EncryptedResource object is immutable (frozen) on-chain
 
 ### Transaction Fails
 **Problem:** Sui transaction fails
 
 **Solutions:**
-1. Check gas budget is sufficient
+1. Check gas budget is sufficient (Enoki sponsors gas for zkLogin users)
 2. Verify object IDs are correct
-3. Ensure wallet has enough SUI
-4. Check if objects are shared/owned correctly
+3. Ensure wallet has enough SUI (or Enoki gas pool is funded)
+4. Check if objects are shared/immutable correctly
 
-## 📞 Support
+## Support
 
 ### Resources
 - **GitHub Issues:** https://github.com/vmmuthu31/Sui-CRM/issues
@@ -248,40 +247,43 @@ npm run dev
 
 ### Community
 - **Discord:** [Join our Discord](#)
-- **Twitter:** [@SuiCRM](#)
+- **Twitter:** [@Tidal](#)
 
-## 🗺️ Roadmap
+## Roadmap
 
-### Phase 1: Core CRM (Current)
+### Phase 1: Core CRM (Complete)
 - [x] Organization management
 - [x] Profile management
-- [x] Encrypted notes
-- [x] Encrypted files
-- [x] Role-based access control
+- [x] Encrypted notes (Seal + Walrus)
+- [x] Encrypted files (Seal + Walrus)
+- [x] Role-based access control (3 roles: Viewer, Manager, Admin)
 - [x] Interaction logging
+- [x] zkLogin via Google OAuth
+- [x] Enoki gas sponsorship
+- [x] Team invite system (email)
 
-### Phase 2: Enhanced Features
+### Phase 2: Bot Integrations (Current)
+- [x] Discord bot with Seal/Walrus encryption
+- [x] Telegram bot
+- [x] Farcaster bot
+- [ ] Twitter bot (streaming)
+- [ ] Advanced campaign tracking
+
+### Phase 3: Enhanced Features
 - [ ] Advanced search & filters
 - [ ] Bulk operations
 - [ ] Email integration
-- [ ] Calendar integration
 - [ ] Mobile app
+- [ ] SuiNS reverse lookup
 
-### Phase 3: Analytics & AI
+### Phase 4: Analytics & AI
 - [ ] Engagement analytics
 - [ ] Conversion funnels
 - [ ] AI-powered insights
 - [ ] Predictive scoring
 - [ ] Automated workflows
 
-### Phase 4: Integrations
-- [ ] Discord bot
-- [ ] Telegram bot
-- [ ] Twitter integration
-- [ ] Snapshot integration
-- [ ] DeFi protocol integrations
-
-## 📝 Contributing
+## Contributing
 
 We welcome contributions! Please read our contributing guidelines:
 
@@ -291,12 +293,12 @@ We welcome contributions! Please read our contributing guidelines:
 4. Add tests
 5. Submit a pull request
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License.
 
 ---
 
-**Last Updated:** February 10, 2026  
-**Version:** 1.0.0  
-**Maintainers:** Sui CRM Team
+**Last Updated:** March 16, 2026
+**Version:** 1.1.0
+**Maintainers:** Tidal Team
