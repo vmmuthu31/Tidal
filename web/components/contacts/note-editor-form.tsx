@@ -5,7 +5,7 @@ import { useSuiClient } from "@mysten/dapp-kit";
 import { Transaction } from "@mysten/sui/transactions";
 import { useUnifiedAccount, useUnifiedTransaction } from "@/hooks/useUnifiedAuth";
 import { useUser } from "@/hooks/useUser";
-import CONTRACT_CONFIG, { buildExplorerUrl } from "@/lib/config/contracts";
+import CONTRACT_CONFIG, { buildExplorerUrl, getCurrentPackageId } from "@/lib/config/contracts";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -76,13 +76,12 @@ export function NoteEditorForm({
         : result.encryptionId;
       const walrusBlobIdBytes = new TextEncoder().encode(result.blobId);
       const sealEncryptionIdBytes = new TextEncoder().encode(cleanEncId);
-      const MOCK_VALID_ADDRESS = address!;
 
       const [resourceObj] = tx.moveCall({
         target: CONTRACT_CONFIG.FUNCTIONS.ACCESS_CONTROL.CREATE_ENCRYPTED_RESOURCE,
         arguments: [
-          tx.pure.address(MOCK_VALID_ADDRESS),
-          tx.pure.address(MOCK_VALID_ADDRESS),
+          tx.pure.address(profileId),
+          tx.pure.address(orgRegistryId),
           tx.pure.u8(CONTRACT_CONFIG.RESOURCE_TYPES.NOTE),
           tx.pure.vector("u8", walrusBlobIdBytes),
           tx.pure.vector("u8", sealEncryptionIdBytes),
@@ -90,7 +89,13 @@ export function NoteEditorForm({
           tx.pure.u64(Date.now()),
         ],
       });
-      tx.transferObjects([resourceObj], tx.pure.address(address!));
+      // Freeze the resource so ANY org member can reference it in seal_approve.
+      // transferObjects makes it owned (only admin can use) → members get 403.
+      tx.moveCall({
+        target: '0x2::transfer::public_freeze_object',
+        typeArguments: [`${getCurrentPackageId()}::crm_access_control::EncryptedResource`],
+        arguments: [resourceObj],
+      });
 
       const res = await signAndExecuteTransaction({ transaction: tx });
       const txResult = await client.waitForTransaction({
