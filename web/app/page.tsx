@@ -212,7 +212,7 @@ export default function Home() {
             <motion.h3 variants={fadeUp} className="text-[26px] font-bold tracking-tight text-[#1A1A1A]">Integrated natively within the Sui Ecosystem</motion.h3>
             <motion.p variants={fadeUp} className="text-gray-500 text-[15px] mt-3 mb-10">We utilize cutting-edge protocols to secure your organization's data.</motion.p>
             <motion.div variants={fadeUp} className="flex flex-wrap justify-center items-center gap-8 md:gap-16 opacity-50 grayscale hover:grayscale-0 transition-all duration-500">
-              {["zkLogin", "Navi", "Walrus Storage", "Enoki Gas Pool", "SuiNS"].map((name, i) => (
+              {["zkLogin", "Walrus Storage", "Enoki Gas Pool", "SuiNS"].map((name, i) => (
                 <div key={i} className="flex items-center gap-2 text-[#1A1A1A] font-bold text-xl hover:scale-110 transition-transform cursor-pointer">
                   <div className="size-8 rounded-lg bg-gray-200" />
                   {name}
