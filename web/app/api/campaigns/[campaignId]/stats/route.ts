@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getSurrealClient } from "@/lib/surreal";
 
 type InteractionRow = {
@@ -20,10 +20,11 @@ function extractRows(result: unknown): InteractionRow[] {
 }
 
 export async function GET(
-  _req: Request,
-  { params }: { params: { campaignId: string } }
+  _req: NextRequest,
+  context: { params: Promise<{ campaignId: string }> }
 ) {
   try {
+    const params = await context.params;
     const { campaignId } = params;
     const db = await getSurrealClient();
 

@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getSurrealClient } from "@/lib/surreal";
 
 interface CampaignRecord {
@@ -25,13 +25,14 @@ function toCampaignId(id: CampaignRecord["id"]): string {
 }
 
 export async function GET(
-  _req: Request,
-  { params }: { params: { campaignId: string } },
+  _req: NextRequest,
+  context: { params: Promise<{ campaignId: string }> },
 ) {
   try {
+    const { campaignId } = await context.params;
     const db = await getSurrealClient();
     const record = (await db.select(
-      `campaign:${params.campaignId}`,
+      `campaign:${campaignId}`,
     )) as CampaignRecord | CampaignRecord[] | null;
 
     const campaign = Array.isArray(record) ? record[0] : record;
