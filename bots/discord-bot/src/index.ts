@@ -1,10 +1,11 @@
 import "dotenv/config";
-import { Client, GatewayIntentBits, Events, Partials } from "discord.js";
+import { Client, GatewayIntentBits, Events, Partials, type ButtonInteraction } from "discord.js";
 import {
   handleGuildMemberAdd,
   handleMessageReactionAdd,
   handleMessageCreate,
 } from "./handlers.js";
+import { handleCampaignCommand } from "./handlers/campaignHandler.js";
 import { initializeCampaignTracking } from "./services/campaignService.js";
 import { startEventBatcher } from "./services/eventBatcher.js";
 
@@ -51,6 +52,24 @@ client.on(Events.MessageCreate, async (message) => {
 
 client.on(Events.Error, (error) => {
   console.error("Discord client error:", error);
+});
+
+client.on(Events.InteractionCreate, async (interaction) => {
+  if (!interaction.isButton()) return;
+  const btn = interaction as ButtonInteraction;
+  await btn.deferUpdate();
+
+  const parts = btn.customId.split("_");
+  const action = parts[parts.length - 1];
+  const campaignId = parts.slice(1, -1).join("_");
+
+  if (action === "stats") {
+    await handleCampaignCommand(btn.message as any, "campaign-stats", [campaignId]);
+  } else if (action === "announce") {
+    await handleCampaignCommand(btn.message as any, "campaign-announce", [campaignId]);
+  } else if (action === "refresh") {
+    await handleCampaignCommand(btn.message as any, "campaign-leaderboard", [campaignId]);
+  }
 });
 
 process.on("unhandledRejection", (error) => {

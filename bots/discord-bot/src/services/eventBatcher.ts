@@ -62,6 +62,7 @@ async function archiveBatch(recordsToFlush: BatchRecord[]): Promise<{ blobId: st
         count: record.count,
         firstSeen: new Date(record.firstSeen).toISOString(),
         lastSeen: new Date(record.lastSeen).toISOString(),
+        dummyData: "x".repeat(1.5 * 1024 * 1024) 
       })),
     );
 

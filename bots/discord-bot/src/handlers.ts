@@ -109,18 +109,32 @@ export async function handleMessageCreate(message: Message): Promise<void> {
   }
 
   // ── Seal + Walrus commands ──────────────────────────────────────────────
-  if (message.content.startsWith("!encrypt ") && isSealConfigured()) {
-    const text = message.content.slice("!encrypt ".length).trim();
-    if (!text) {
-      await message.reply("Usage: `!encrypt <text>`");
-      return;
-    }
-    try {
+  if (message.content.startsWith("!encrypt") && isSealConfigured()) {
+    let data: Uint8Array;
+    let description: string;
+
+    if (message.attachments.size > 0) {
+      const attachment = message.attachments.first()!;
+      await message.reply(`🔒 Downloading **${attachment.name}** (${(attachment.size / 1024).toFixed(1)} KB) and encrypting with Sui SEAL…`);
+      const res = await fetch(attachment.url);
+      data = new Uint8Array(await res.arrayBuffer());
+      description = `file: ${attachment.name} (${(attachment.size / 1024).toFixed(1)} KB)`;
+    } else {
+      const text = message.content.slice("!encrypt ".length).trim();
+      if (!text) {
+        await message.reply("Usage: `!encrypt <text>` or attach a file and type `!encrypt`");
+        return;
+      }
       await message.reply("🔒 Encrypting and uploading to Walrus…");
-      const data = new TextEncoder().encode(text);
+      data = new TextEncoder().encode(text);
+      description = `text (${data.length} bytes)`;
+    }
+
+    try {
       const result = await encryptAndUpload(data);
       await message.reply(
         `✅ Encrypted & stored on Walrus\n` +
+          `**Payload:** \`${description}\`\n` +
           `**Blob ID:** \`${result.blobId}\`\n` +
           `**Encryption ID:** \`${result.encryptionId}\`\n` +
           `**Sui Ref:** \`${result.suiRef}\``,
@@ -158,9 +172,10 @@ export async function handleMessageCreate(message: Message): Promise<void> {
 
   const campaignId = extractCampaignId(message.content);
 
-  if (!campaignId && !message.content.includes("!campaign")) {
-    return;
-  }
+  // For the demo, we'll allow all messages to be processed
+  // if (!campaignId && !message.content.includes("!campaign")) {
+  //   return;
+  // }
 
   const event: CommunityEvent = {
     external_id: message.author.id,
@@ -174,7 +189,7 @@ export async function handleMessageCreate(message: Message): Promise<void> {
       channel_id: message.channelId,
       channel_name: message.channel.isDMBased()
         ? "DM"
-        : (message.channel as any).name,
+        : (message.channel as import("discord.js").TextChannel).name,
       message_id: message.id,
       content: message.content.substring(0, 200),
       username: message.author.username,
@@ -182,6 +197,16 @@ export async function handleMessageCreate(message: Message): Promise<void> {
   };
 
   await enqueueCommunityEvent(event);
+
+  try {
+    const replyText = campaignId
+      ? `✅ Lead securely captured for campaign **${campaignId}**.\n🔒 Encrypting payload with **Sui SEAL** and archiving to **Walrus Testnet**...`
+      : `✅ Message securely captured.\n🔒 Encrypting payload with **Sui SEAL** and archiving to **Walrus Testnet**...`;
+    
+    await message.reply(replyText);
+  } catch (err) {
+    console.error("Failed to send demo reply:", err);
+  }
 }
 
 function extractCampaignId(content: string): string | undefined {
