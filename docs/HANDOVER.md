@@ -1,113 +1,152 @@
-# Sponsored Transaction Bug Handover
+# Phase 2 Handover: Member Access & Org Management
+
+**Date:** 2026-03-15
+**Previous:** Sponsored Transaction Bug Handover (see git history for old HANDOVER.md)
+
+---
 
 ## Context
-Read `docs/ARCHITECTURE.md`, `docs/sponsored_transactions_current.md`, and `docs/implementation_checklist.md` first for full project context if the docs are not mentioned go over here as well `/home/ashwin/.claude/projects/-mnt-d-projects-Sui-CRM/memory`.
+
+Read `docs/ARCHITECTURE.md`, `docs/MEMORY.md`, and `docs/IMPLEMENTATION_AND_USERFLOW.md` for full project context.
+
+This session implemented **Phase 2: Fix Member Access & Org Management** — enabling members who accept invites to see contacts, decrypt files/notes, and giving admins the ability to manage members on-chain.
 
 ---
 
-## What Was Done (Previous Sessions)
+## What Was Done (This Session)
 
-### Fix 1 — onboarding/page.tsx (DONE ✅)
-**File:** `web/app/onboarding/page.tsx`
-**Change:** Replaced `useUnifiedSignAndExecuteTransaction` with `useUnifiedTransaction` and aliased `execute` as `signAndExecuteTransaction`.
-**Why:** The old hook builds a full tx requiring gas coins in the user's wallet. zkLogin users have no SUI. `useUnifiedTransaction` routes zkLogin through `sponsorAndExecute` → Enoki.
+### Fix 1 — Contacts Visibility for Members (DONE)
+**Files:** `web/app/(dashboard)/contacts/page.tsx`
+**Change:** Members now query contacts using `orgAdminAddress` instead of their own `suiAddress`.
+**Why:** Contacts are stored with the admin's address as `adminAddress`. Members need to query by their admin's address to see org contacts.
+**Bug fixed:** Contacts page also had an infinite spinner bug — `loading` was initialized `true` but never set to `false` when `useUser` hadn't loaded yet. Split into `userLoading` + `loadingContacts`.
 
-### Fix 2 — zklogin-jwt header (POSSIBLY WRONG — see bug below)
-**Files:** `web/lib/services/enoki.service.ts`, `web/app/api/sponsor/route.ts`, `web/hooks/useSponsoredTransaction.ts`
-**Change:** Added `jwtToken` field passed as `zklogin-jwt` header to Enoki's create step.
-**Why it was added:** suiverify (working reference) sends this header.
-**WARNING:** This may be the cause of the `expired` error — see hypothesis below.
+### Fix 2 — Propagate orgRegistryId to Members (DONE)
+**Files:** `web/app/auth/callback/page.tsx`, `web/hooks/useUser.ts`
+**Change:** During invite acceptance, the callback now fetches the admin's `orgRegistryId` and copies it to the member's user record. `useUser` has a fallback that does the same lookup if `orgRegistryId` is missing.
+**Why:** Without `orgRegistryId`, members fall back to `EXAMPLE_ORG_REGISTRY` which doesn't have them as members, causing Seal decryption to fail with 403.
 
----
+### Fix 3 — On-Chain Member Registration UI (DONE)
+**Files:** `web/app/(dashboard)/organization/page.tsx`, `web/app/api/invites/route.ts`, `web/lib/mongodb.ts`
+**Change:** Org page now shows unregistered members with amber "Register On-Chain" button. Admin clicks → `add_org_member` tx → member marked `onchainRegistered: true`. Invites GET endpoint enriches with `onchainRegistered` status and backfills `memberAddress` for old invites.
+**Why:** Accepting an invite only creates a MongoDB record. The member must also be added to the on-chain `OrgAccessRegistry` for Seal's `seal_approve` to pass.
 
-## Active Bug: `Enoki execute error (400): {"code":"expired","message":"Sponsored transaction has expired"}`
+### Fix 4 — Remove Member (DONE)
+**Files:** `web/app/(dashboard)/organization/page.tsx`, `web/app/api/invites/[token]/route.ts`
+**Change:** Remove button per member. Calls `remove_org_member` on-chain, cleans up member's DB record, marks invite as "removed".
+**Why:** No way to revoke access before this change.
 
-### Error Location
-`POST /api/sponsor/:digest` → `executeSponsoredTransaction()` in `enoki.service.ts`
+### Fix 5 — Role Selection in Invite Flow (DONE)
+**Files:** `web/app/(dashboard)/organization/page.tsx`, `web/app/api/invites/route.ts`, `web/lib/mongodb.ts`
+**Change:** Added role dropdown (Viewer/Manager/Admin) to invite form. Role stored on invite and used during on-chain registration.
+**Why:** Previously all invites were hardcoded as "member" role.
 
-### What the Error Means
-Enoki returns `expired` when it can't execute a sponsored transaction it previously created. This happens either:
-- (A) TTL exceeded between create and execute steps (unlikely — steps run in milliseconds sequentially)
-- (B) Enoki marks the sponsored tx as invalid/expired immediately on create when the `zklogin-jwt` header fails its internal validation
-
-### Root Cause Hypothesis (Most Likely)
-
-**The `zklogin-jwt` header is the culprit.**
-
-Enoki has **two modes** for sponsored transactions:
-- **Mode A (Enoki-managed zkLogin):** You send `zklogin-jwt` header with Google JWT. Enoki validates the JWT against its own OAuth configuration, generates the ZK proof internally. Execute step expects **only the ephemeral Ed25519 signature** (not a full zkLogin signature). Enoki assembles the full zkLogin sig internally.
-- **Mode B (External zkLogin, gas-only sponsorship):** No `zklogin-jwt` header. You manage your own ZK proofs. Execute step expects the **full zkLogin signature** (flag 0x05 + BCS zkLoginSignature).
-
-**CRM is Mode B** (uses Mysten's prover at `prover-dev.mystenlabs.com/v1`, manages its own ZK proofs).
-
-**The bug:** My earlier fix added the `zklogin-jwt` header (Mode A create) but the execute step sends the full zkLogin signature (Mode B execute). This Mode A/B mismatch may cause Enoki to immediately invalidate the sponsored tx and return `expired` on execute.
-
-Additionally, even if seguivery also sends the JWT, suiverify uses `@mysten/sui` **v1.39.0** while CRM uses **v2.3.1** — the JWT handling path in Enoki may behave differently depending on the client ID.
-
-### Secondary Hypothesis
-
-The Enoki portal has **"Allowed Addresses"** containing only two hardcoded addresses:
-- `0xcca6db49f975b25b2f98d76db7f505b487bcfd9eeeadfea06b51e2fe126fb9e4`
-- `0x3649d92fe471b13da76475cb05f346d5c397c858478c3925819b2b3ca4dbe5e2`
-
-The zkLogin user's address (`0x90e52c...` from the logs) is **not in this list**. If Enoki's portal-level address allowlist restricts senders, this would block execution. However, this would normally produce an `unauthorized` error at the create step, not `expired` at execute.
+### Fix 6 — Decryption Service Hardening (PARTIAL)
+**Files:** `web/lib/services/decryptionService.ts`
+**Change:** Added validation for empty `resource_id`, retry logic (3 attempts with backoff) for "newly created object" errors, debug logging for `seal_approve` arguments.
+**Why:** Empty `resourceObjectId` caused invalid PTB. Recently created on-chain objects may not be visible to Seal key servers immediately.
 
 ---
 
-## Recommended Fix — Try In Order
+## Active Bug: Member Seal Decryption 403
 
-### Step 1: Remove `zklogin-jwt` header (highest confidence fix)
+### Status: UNRESOLVED
 
-In `web/lib/services/enoki.service.ts`, remove the `zklogin-jwt` header block:
-
-```typescript
-// REMOVE THIS BLOCK:
-if (input.jwtToken) {
-  headers["zklogin-jwt"] = input.jwtToken;
-}
+### Error
+```
+POST https://seal-key-server-testnet-2.mystenlabs.com/v1/fetch_key 403 (Forbidden)
+InvalidParameterError: PTB contains an invalid parameter, possibly a newly created object that the FN has not yet seen
 ```
 
-Also remove `jwtToken` from `CreateSponsoredTxInput`, the API route, and the hook — keep the flow clean as Mode B (gas-only sponsorship, full zkLogin sig on execute).
+### What Works
+- Admin can decrypt notes and files successfully
+- Both admin and member use the same `orgRegistryId`, `resourceId`, and `profileRegistryId`
+- Member removal works correctly
+- Contacts now load for members
+- Role selection and invite flow work
 
-### Step 2: If Step 1 doesn't fix it — clear portal "Allowed Addresses"
+### What Fails
+- Member gets Seal 403 when trying to decrypt
+- Same `seal_approve` args as admin, but member's address is rejected
 
-In the Enoki portal, **empty the "Allowed Addresses" list** so all sender addresses are permitted. The per-tx `allowedMoveCallTargets` at the code level is sufficient security.
+### Confirmed Logs (Admin vs Member — same args)
+```
+seal_approve args: {
+  resourceId: '0x6ded485de46973bc9b96246c104a2cab59c002dd318070144ca980cd0d727c5b',
+  orgRegistryId: '0x4d6900280ea05cf9842c66317b7055ba723acaadcce935dd8de34a8792e70238',
+  profileRegistryId: '0x395e1731de16b7393f80afba04252f18c56e1cf994e9d77c755a759f8bc5c4b0',
+}
+```
+Admin: decryption succeeds.
+Member: Seal key server returns 403.
 
-### Step 3: If Step 2 doesn't fix it — simplify allowedMoveCallTargets
+### Root Cause Analysis
 
-In `useSponsoredTransaction.ts`, try passing `allowedMoveCallTargets: undefined` (rely only on the portal's list, not per-tx list). This removes any potential mismatch between what the code sends and what the portal expects.
+The 403 means the Move contract's `seal_approve` function rejects the member during PTB simulation on the Seal key server. Possible causes:
+
+1. **Member not actually registered on-chain** — The org page UI may have shown green checkmarks for members that were never registered (old invites without `memberAddress`). The backfill logic was added to fix this, but existing members may need to be re-registered.
+
+2. **Member registered with wrong address** — If the `memberAddress` saved on the invite doesn't match the member's actual zkLogin address (e.g., address changed due to re-login with different salt), the on-chain registry has a stale address.
+
+3. **Full node propagation delay** — If `add_org_member` was called very recently, the Seal key servers' full node may not have the updated `OrgAccessRegistry` state yet. The retry logic (3 attempts, 3s/6s/9s backoff) should handle this.
+
+4. **CORS issue with NodeInfra Seal server** — One Seal key server (`open-seal-testnet.nodeinfra.com`) returns duplicate `Access-Control-Allow-Origin: *, *` headers which browsers reject. This reduces the available key servers from 4 to 3, which may affect the 2-of-4 threshold requirement.
+
+### Debugging Steps
+
+1. **Verify on-chain registration:**
+   ```bash
+   sui client object <orgRegistryId> --json
+   ```
+   Check the `members` field contains the member's address.
+
+2. **Verify member's address matches:**
+   Compare `member.suiAddress` in MongoDB with what's in the on-chain `OrgAccessRegistry.members` table.
+
+3. **Re-register member:**
+   On the org page, remove the member and re-add them. This ensures `add_org_member` uses the correct current address.
+
+4. **Wait and retry:**
+   After on-chain registration, wait 15-30 seconds before attempting decryption.
+
+### Recommended Next Steps
+
+1. Add a "Verify On-Chain" button that checks the Sui RPC for the member's presence in `OrgAccessRegistry.members` — this would confirm whether the issue is registration or something else.
+2. Consider adding a CORS proxy for the NodeInfra Seal key server, or exclude it from the server list.
+3. If the member's address keeps changing between logins, the root issue is in `ZkLoginService.getZkLoginAddress()` producing inconsistent addresses.
 
 ---
 
-## Files To Know
+## Files Modified (Complete List)
 
-| File | Purpose |
-|------|---------|
-| `web/hooks/useSponsoredTransaction.ts` | Client hook: builds tx kind bytes, calls /api/sponsor, signs bytes, calls /api/sponsor/:digest |
-| `web/hooks/useUnifiedAuth.ts` | Routing: wallet → dapp-kit, zkLogin → `useSponsoredTransaction` via `useUnifiedTransaction` |
-| `web/lib/services/enoki.service.ts` | Server-side Enoki API calls (never exposed client-side) |
-| `web/app/api/sponsor/route.ts` | Next.js API route: POST /api/sponsor → Enoki create |
-| `web/app/api/sponsor/[digest]/route.ts` | Next.js API route: POST /api/sponsor/:digest → Enoki execute |
-| `web/lib/zklogin/zklogin.ts` | ZkLoginService: initializeSession, fetchZkProof, createTransactionSignature |
-| `web/lib/zklogin/session.ts` | SessionManager: localStorage for ephemeral session + proof |
-| `web/app/auth/callback/page.tsx` | OAuth callback: fetches ZK proof, saves to SessionManager |
-
----
-
-## What Has Been Verified as Correct
-
-- `tx.build({ onlyTransactionKind: true })` for simple Move calls does NOT need any network/RPC call (confirmed by reading v2 SDK `resolve.mjs` — `needsTransactionResolution` returns false for pure inputs with `onlyTransactionKind: true`)
-- `Ed25519Keypair.fromSecretKey(bech32)` correctly recreates the ephemeral keypair
-- `addressSeed` computation via `genAddressSeed(BigInt(userSalt), "sub", sub, aud)` is consistent across proof generation and signature creation
-- All 11 `CRM_SPONSORED_TARGETS` are whitelisted in the Enoki portal
-- `onboarding/page.tsx` now uses `useUnifiedTransaction` (sponsored path) ✅
+| File | Change |
+|------|--------|
+| `web/app/(dashboard)/contacts/page.tsx` | Member queries by `orgAdminAddress`; fixed infinite spinner |
+| `web/app/(dashboard)/organization/page.tsx` | On-chain register/remove buttons, role selector in invite form |
+| `web/app/api/contacts/route.ts` | Comment update only |
+| `web/app/api/invites/[token]/route.ts` | PATCH accepts `memberAddress` and `status` override |
+| `web/app/api/invites/route.ts` | POST accepts `role`; GET enriches with `onchainRegistered` + backfills `memberAddress` |
+| `web/app/api/users/route.ts` | PATCH accepts `onchainRegistered`, `orgAdminAddress`, `role` |
+| `web/app/auth/callback/page.tsx` | Copies admin's `orgRegistryId` to member; saves `memberAddress` on invite |
+| `web/hooks/useUser.ts` | Member fallback: fetches admin's `orgRegistryId` if missing |
+| `web/lib/mongodb.ts` | Added `onchainRegistered` to `UserRecord`; expanded `InviteRecord.role` and `status` |
+| `web/lib/services/decryptionService.ts` | Validate `resource_id`, retry logic, debug logging |
 
 ---
 
-## Developer Notes (from user)
+## What Has Been Verified as Working
 
-- CRM is testnet-only for now; mainnet later
-- Enoki free tier covers gas for testnet (no payment needed)
-- The reference working implementation is `/mnt/d/projects/suiverify/suiverify-main` — compare against it when debugging
-- Memory files are in `/mnt/d/projects/Sui-CRM/docs/` (not the default claude memory location)
-- Keep all code changes composable and minimal — no over-engineering
+- Admin creates org, adds contacts, encrypts notes/files, decrypts them
+- Member accepts invite → sees org on dashboard
+- Member sees admin's contacts list (via `orgAdminAddress`)
+- Admin can register member on-chain via org page
+- Admin can remove member (on-chain + DB cleanup)
+- Role selection in invite form (Viewer/Manager/Admin)
+- `orgRegistryId` propagated to member during invite acceptance and via useUser fallback
+- Old invites without `memberAddress` are backfilled from user records
+
+## What Has NOT Been Verified / Still Broken
+
+- Member decryption (Seal 403) — see Active Bug above
+- Member creating contacts/notes (should use `orgAdminAddress` as `adminAddress` in POST)
+- Onboarding UX still shows wallet funding prompt for zkLogin users (low priority, see BUG.md)

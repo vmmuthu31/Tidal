@@ -769,9 +769,65 @@ p, li { font-size: var(--body-size); color: #6B7280; line-height: 1.6; }
 .contract-val { font-size: var(--small-size); color: #1A1A1A; font-weight: 600; font-family: 'Plus Jakarta Sans', monospace; }
 
 /* ═══════════════════════════════════════════
-   SLIDE 12 — CTA
+   SLIDE 12 — GO-TO-MARKET
 ═══════════════════════════════════════════ */
-#slide-12 .slide-content {
+#slide-12 .gtm-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
+    gap: clamp(0.5rem, 1.2vw, 0.85rem);
+    margin-top: clamp(0.75rem, 1.5vw, 1.25rem);
+}
+.gtm-card {
+    background: #ffffff;
+    border: 1px solid rgba(0,0,0,0.06);
+    border-radius: 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03);
+    padding: clamp(0.75rem, 1.5vw, 1.1rem);
+}
+.gtm-card h3 { margin-bottom: 6px; }
+.gtm-card p { margin-top: 4px; }
+.gtm-tag {
+    display: inline-block;
+    font-size: var(--small-size);
+    font-weight: 600;
+    color: #8B5CF6;
+    background: rgba(139,92,246,0.08);
+    border-radius: 999px;
+    padding: 2px 10px;
+    margin-top: 8px;
+}
+
+/* ═══════════════════════════════════════════
+   SLIDE 13 — BUSINESS MODEL
+═══════════════════════════════════════════ */
+.revenue-grid {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(0.4rem, 1vw, 0.65rem);
+    margin-top: clamp(0.75rem, 1.5vw, 1.25rem);
+}
+.revenue-item {
+    background: #ffffff;
+    border: 1px solid rgba(0,0,0,0.06);
+    border-radius: 14px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03);
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: clamp(0.6rem, 1.5vw, 1rem);
+    padding: clamp(0.55rem, 1.3vw, 0.85rem) clamp(0.8rem, 2vw, 1.2rem);
+    border-left: 3px solid transparent;
+}
+.revenue-icon { font-size: clamp(1rem, 1.8vw, 1.25rem); }
+.revenue-info { display: flex; flex-direction: column; gap: 2px; }
+.revenue-label { font-size: var(--small-size); font-weight: 700; color: #1A1A1A; text-transform: uppercase; letter-spacing: 0.06em; }
+.revenue-tier { font-size: var(--small-size); color: #6B7280; }
+.revenue-desc { font-size: var(--small-size); color: #9CA3AF; text-align: right; max-width: clamp(120px, 30vw, 280px); }
+
+/* ═══════════════════════════════════════════
+   SLIDE 14 — CTA
+═══════════════════════════════════════════ */
+#slide-14 .slide-content {
     align-items: center;
     text-align: center;
     gap: var(--content-gap);
@@ -806,7 +862,7 @@ p, li { font-size: var(--body-size); color: #6B7280; line-height: 1.6; }
 
 <!-- Fixed Navigation -->
 <div class="progress-track"><div class="progress-bar"></div></div>
-<div class="slide-counter">01 / 12</div>
+<div class="slide-counter">01 / 14</div>
 <div class="nav-dots"></div>
 
 <!-- ═══════════════════════════════════════════
@@ -1197,7 +1253,7 @@ p, li { font-size: var(--body-size); color: #6B7280; line-height: 1.6; }
     <div class="slide-content">
         <div class="reveal">
             <div class="section-label">Architecture</div>
-            <h2>Six layers,<br><span class="grad-text">zero compromise</span></h2>
+            <h2>Five layers,<br><span class="grad-text">zero compromise</span></h2>
         </div>
 
         <div class="stack-list">
@@ -1240,14 +1296,6 @@ p, li { font-size: var(--body-size); color: #6B7280; line-height: 1.6; }
                     <span class="stack-tech">Enoki Gas Pool</span>
                 </div>
                 <span class="stack-desc">Pre-funded org pool covers all team member transactions seamlessly.</span>
-            </div>
-            <div class="stack-item reveal" style="border-left-color:#22C55E;">
-                <span class="stack-icon">🟢</span>
-                <div class="stack-info">
-                    <span class="stack-layer">Index</span>
-                    <span class="stack-tech">MongoDB</span>
-                </div>
-                <span class="stack-desc">Off-chain index for contacts, invites, notes metadata. Supplementary to chain.</span>
             </div>
         </div>
     </div>
@@ -1442,9 +1490,137 @@ p, li { font-size: var(--body-size); color: #6B7280; line-height: 1.6; }
 </section>
 
 <!-- ═══════════════════════════════════════════
-     SLIDE 12 — CTA
+     SLIDE 12 — GO-TO-MARKET ROADMAP
 ═══════════════════════════════════════════ -->
 <section class="slide" id="slide-12">
+    <nav class="slide-nav">
+        <div class="slide-nav-brand">
+            <div class="logo-container">
+                <img src="web/public/logo.png" alt="Tidal" style="width: 115%; height: 115%; object-fit: cover;" />
+            </div>
+            <span class="brand-name">Tidal</span>
+        </div>
+        <span class="slide-section-tag">Roadmap</span>
+    </nav>
+
+    <div class="slide-content">
+        <div class="reveal">
+            <div class="section-label">Go-To-Market</div>
+            <h2>4 phases to <span class="grad-text">mainnet</span></h2>
+        </div>
+
+        <div class="gtm-grid">
+            <div class="gtm-card reveal">
+                <div class="icon-box icon-box-purple" style="width:28px;height:28px;border-radius:8px;font-size:0.8rem;">1</div>
+                <h3>Technical Completion</h3>
+                <p>Cross-platform identity resolution, on-chain activity enrichment, passkey auth, encrypted note versioning, advanced search.</p>
+                <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
+                    <span class="gtm-tag">Days 1–30</span>
+                    <span class="gtm-tag" style="color:#0F6E56;background:#E1F5EE;">$15K</span>
+                </div>
+            </div>
+            <div class="gtm-card reveal">
+                <div class="icon-box icon-box-yellow" style="width:28px;height:28px;border-radius:8px;font-size:0.8rem;">2</div>
+                <h3>Security Audit & Hardening</h3>
+                <p>External Move contract audit, Seal encryption review, load testing, encrypted analytics dashboards, REST API for ecosystem.</p>
+                <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
+                    <span class="gtm-tag">Days 31–60</span>
+                    <span class="gtm-tag" style="color:#0F6E56;background:#E1F5EE;">$20K</span>
+                </div>
+            </div>
+            <div class="gtm-card reveal">
+                <div class="icon-box icon-box-red" style="width:28px;height:28px;border-radius:8px;font-size:0.8rem;">3</div>
+                <h3>Features & Integrations</h3>
+                <p>Audit remediation, airdrop targeting, event management hooks, plugin architecture, DAO governance, DeFi activity tracking.</p>
+                <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
+                    <span class="gtm-tag">Days 61–90</span>
+                    <span class="gtm-tag" style="color:#0F6E56;background:#E1F5EE;">$15K</span>
+                </div>
+            </div>
+            <div class="gtm-card reveal">
+                <div class="icon-box icon-box-green" style="width:28px;height:28px;border-radius:8px;font-size:0.8rem;">4</div>
+                <h3>Mainnet & Adoption</h3>
+                <p>Mainnet deployment, 5+ pilot projects (Omura, Waldrop, SuiVerify, Conso), 1K+ encrypted records, builder community workshops.</p>
+                <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
+                    <span class="gtm-tag">Days 91–135</span>
+                    <span class="gtm-tag" style="color:#0F6E56;background:#E1F5EE;">$10K</span>
+                </div>
+            </div>
+        </div>
+
+        <p class="reveal" style="font-size:var(--small-size);color:#9CA3AF;text-align:center;margin-top:clamp(0.5rem,1.2vw,0.85rem);">Total budget: $60,000 · 135 days · 2 engineers</p>
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     SLIDE 13 — BUSINESS MODEL
+═══════════════════════════════════════════ -->
+<section class="slide" id="slide-13">
+    <nav class="slide-nav">
+        <div class="slide-nav-brand">
+            <div class="logo-container">
+                <img src="web/public/logo.png" alt="Tidal" style="width: 115%; height: 115%; object-fit: cover;" />
+            </div>
+            <span class="brand-name">Tidal</span>
+        </div>
+        <span class="slide-section-tag">Business Model</span>
+    </nav>
+
+    <div class="slide-content">
+        <div class="reveal">
+            <div class="section-label">Revenue</div>
+            <h2>Core <span class="grad-text">Revenue Engine</span></h2>
+        </div>
+
+        <div class="revenue-grid">
+            <div class="revenue-item reveal" style="border-left-color:#3B82F6;">
+                <span class="revenue-icon">💳</span>
+                <div class="revenue-info">
+                    <span class="revenue-label">SaaS Subscriptions</span>
+                    <span class="revenue-tier">Free → $49/mo Team → Enterprise</span>
+                </div>
+                <span class="revenue-desc">Tiered plans with increasing storage, members, and encryption quotas.</span>
+            </div>
+            <div class="revenue-item reveal" style="border-left-color:#8B5CF6;">
+                <span class="revenue-icon">📊</span>
+                <div class="revenue-info">
+                    <span class="revenue-label">Usage-Based Revenue</span>
+                    <span class="revenue-tier">Pay per usage</span>
+                </div>
+                <span class="revenue-desc">Walrus storage, Seal encryption ops, and automation execution metered billing.</span>
+            </div>
+            <div class="revenue-item reveal" style="border-left-color:#06B6D4;">
+                <span class="revenue-icon">🔌</span>
+                <div class="revenue-info">
+                    <span class="revenue-label">API & Integrations</span>
+                    <span class="revenue-tier">Paid access</span>
+                </div>
+                <span class="revenue-desc">Targeting, airdrop tools, and ecosystem integration endpoints.</span>
+            </div>
+            <div class="revenue-item reveal" style="border-left-color:#EAB308;">
+                <span class="revenue-icon">🧩</span>
+                <div class="revenue-info">
+                    <span class="revenue-label">Plugin Marketplace</span>
+                    <span class="revenue-tier">20–30% revenue share</span>
+                </div>
+                <span class="revenue-desc">Third-party extensions and integrations built on the Tidal platform.</span>
+            </div>
+            <div class="revenue-item reveal" style="border-left-color:#22C55E;">
+                <span class="revenue-icon">🏢</span>
+                <div class="revenue-info">
+                    <span class="revenue-label">Enterprise Contracts</span>
+                    <span class="revenue-tier">High-ticket</span>
+                </div>
+                <span class="revenue-desc">Foundations, accelerators, and ecosystem management — custom deployments.</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     SLIDE 14 — CTA
+═══════════════════════════════════════════ -->
+<section class="slide" id="slide-14">
     <!-- Blobs -->
     <div class="blob blob-blue" style="width:min(500px,60vw);height:min(500px,60vw);top:calc(-1 * clamp(50px,8vw,120px));left:calc(-1 * clamp(50px,8vw,120px));opacity:0.7;"></div>
     <div class="blob blob-purple" style="width:min(400px,50vw);height:min(400px,50vw);top:calc(-1 * clamp(40px,6vw,80px));right:calc(-1 * clamp(40px,6vw,80px));opacity:0.6;"></div>
